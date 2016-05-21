@@ -1,0 +1,15 @@
+{
+  "name": "eo4evr",
+  "version": "1.0.0",
+  "description": "Dat EO4Ev-r Doe",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Austin Gray",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.4",
+    "socket.io": "^1.4.6"
+  }
+}
