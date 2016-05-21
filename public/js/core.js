@@ -1,66 +1,42 @@
-/*
+var EO = EO || {};
 
-	what needs to happen
+EO.width = 800;
+EO.height = 600;
 
-	init three...
-		camera?
-
-	draw a map...
-		so generate a map?
-		create tile system
-
-			GAME.map
-
-			only draw map if in viewport
-
-	place a character on the map...
-		center on the character
-
-	add keyboard controls
-
-
-
-	*/
-
-var GAME = GAME || {};
-
-GAME.width = 800;
-GAME.height = 600;
-
-GAME.preload = {};
-GAME.preload.grass;
-GAME.preload.init = function(init) {
+EO.preload = {};
+EO.preload.grass;
+EO.preload.init = function(init) {
 	var textureLoader = new THREE.TextureLoader();
 	var grass = textureLoader.load('img/tiles/grass/grass1.png');
 	
-	GAME.textures.water = textureLoader.load('img/tiles/water/water-animated.png');
-	GAME.textures.water.wrapS = GAME.textures.water.wrapT = THREE.RepeatWrapping; 
-	GAME.textures.water.repeat.set( 1 / 3, 1 );
+	EO.textures.water = textureLoader.load('img/tiles/water/water-animated.png');
+	EO.textures.water.wrapS = EO.textures.water.wrapT = THREE.RepeatWrapping; 
+	EO.textures.water.repeat.set( 1 / 3, 1 );
 	//var grass = textureLoader.load('img/grass_64.jpg');
 	//grass.wrapS = grass.wrapT = THREE.RepeatWrapping;
-	GAME.preload.grass = new THREE.MeshPhongMaterial({ map: grass });
-	GAME.preload.grass.receiveShadow = true;
-	GAME.preload.water = new THREE.MeshPhongMaterial({ map: GAME.textures.water });
-	GAME.preload.water.receiveShadow = true;
+	EO.preload.grass = new THREE.MeshPhongMaterial({ map: grass });
+	EO.preload.grass.receiveShadow = true;
+	EO.preload.water = new THREE.MeshPhongMaterial({ map: EO.textures.water });
+	EO.preload.water.receiveShadow = true;
 	init();
 }
 
-GAME.textures = {};
-GAME.input = {};
-GAME.input.keyboard = {};
-GAME.input.keyboard.left = false;
-GAME.input.keyboard.right = false;
-GAME.input.keyboard.up = false;
-GAME.input.keyboard.down = false;
-GAME.input.keyboard.update = function() {
+EO.textures = {};
+EO.input = {};
+EO.input.keyboard = {};
+EO.input.keyboard.left = false;
+EO.input.keyboard.right = false;
+EO.input.keyboard.up = false;
+EO.input.keyboard.down = false;
+EO.input.keyboard.update = function() {
 	var mSpeed = .7;
 	var cRot = 0;
 	var cX = 0;
 	var cY = 0;
-	var cLeft = GAME.input.keyboard.left;
-	var cRight = GAME.input.keyboard.right;
-	var cDown = GAME.input.keyboard.down;
-	var cUp = GAME.input.keyboard.up;
+	var cLeft = EO.input.keyboard.left;
+	var cRight = EO.input.keyboard.right;
+	var cDown = EO.input.keyboard.down;
+	var cUp = EO.input.keyboard.up;
 	if (cLeft) {
 		cRot = -1.6;
 	}
@@ -89,33 +65,33 @@ GAME.input.keyboard.update = function() {
 		cRot = 2.4;
 		mSpeed = .5;
 	}
-	if (GAME.character.action) {
-		if ( GAME.input.keyboard.left === false && GAME.input.keyboard.up === false && GAME.input.keyboard.right === false && GAME.input.keyboard.down === false ) {
-			GAME.character.action.walk.stop();
+	if (EO.character.action) {
+		if ( EO.input.keyboard.left === false && EO.input.keyboard.up === false && EO.input.keyboard.right === false && EO.input.keyboard.down === false ) {
+			EO.character.action.walk.stop();
 		} else {
-			GAME.character.action.walk.play();
-			if (cLeft) GAME.character.mesh.position.x = GAME.character.mesh.position.x - mSpeed;
-			if (cRight) GAME.character.mesh.position.x = GAME.character.mesh.position.x + mSpeed;
-			if (cDown) GAME.character.mesh.position.y = GAME.character.mesh.position.y - mSpeed;
-			if (cUp) GAME.character.mesh.position.y = GAME.character.mesh.position.y + mSpeed;
-			GAME.character.mesh.rotation.y = cRot;
+			EO.character.action.walk.play();
+			if (cLeft) EO.character.mesh.position.x = EO.character.mesh.position.x - mSpeed;
+			if (cRight) EO.character.mesh.position.x = EO.character.mesh.position.x + mSpeed;
+			if (cDown) EO.character.mesh.position.y = EO.character.mesh.position.y - mSpeed;
+			if (cUp) EO.character.mesh.position.y = EO.character.mesh.position.y + mSpeed;
+			EO.character.mesh.rotation.y = cRot;
 		}
 	}
 
 }
-GAME.three = {};
-GAME.three.init = function() {
+EO.three = {};
+EO.three.init = function() {
 	//scene
 	this.scene = new THREE.Scene();
 	//camera
-	//this.camera = new THREE.PerspectiveCamera( 75, GAME.width / GAME.height, .1, 10000 );
-	this.camera = new THREE.OrthographicCamera( (GAME.width / - 2), (GAME.width / 2), (GAME.height / 2), ( GAME.height / - 2), -1000, 1000 );
+	//this.camera = new THREE.PerspectiveCamera( 75, EO.width / EO.height, .1, 10000 );
+	this.camera = new THREE.OrthographicCamera( (EO.width / - 2), (EO.width / 2), (EO.height / 2), ( EO.height / - 2), -1000, 1000 );
 	//this.camera.rotation.x = .75;
 	this.camera.position.z = 200;
 	//renderer
 	var canvas = document.getElementById("gamecanvas");
 	this.renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
-	this.renderer.setSize( GAME.width, GAME.height );
+	this.renderer.setSize( EO.width, EO.height );
 	this.renderer.shadowMap.enabled = true;
 	//this.renderer.shadowMap.cullFace = true;
 	//keyboard
@@ -127,51 +103,51 @@ GAME.three.init = function() {
 	
 	this.keyboard.domElement.addEventListener('keydown', function(event){
 		//up
-		if( GAME.three.keyboard.eventMatches(event, 'w') ) {
-			GAME.input.keyboard.up = true;
+		if( EO.three.keyboard.eventMatches(event, 'w') ) {
+			EO.input.keyboard.up = true;
 		}
 		//down
-		if( GAME.three.keyboard.eventMatches(event, 's') ) {
-			GAME.input.keyboard.down = true;
+		if( EO.three.keyboard.eventMatches(event, 's') ) {
+			EO.input.keyboard.down = true;
 		}
 		//left
-		if( GAME.three.keyboard.eventMatches(event, 'a') ) {
-			GAME.input.keyboard.left = true;
+		if( EO.three.keyboard.eventMatches(event, 'a') ) {
+			EO.input.keyboard.left = true;
 		}
 		//right
-		if( GAME.three.keyboard.eventMatches(event, 'd') ) {
-			GAME.input.keyboard.right = true;
+		if( EO.three.keyboard.eventMatches(event, 'd') ) {
+			EO.input.keyboard.right = true;
 		}
 	});
 	this.keyboard.domElement.addEventListener('keyup', function(event) {
 		//up
-		if( GAME.three.keyboard.eventMatches(event, 'w') ) {
-			GAME.input.keyboard.up = false;
+		if( EO.three.keyboard.eventMatches(event, 'w') ) {
+			EO.input.keyboard.up = false;
 		}
 		//down
-		if( GAME.three.keyboard.eventMatches(event, 's') ) {
-			GAME.input.keyboard.down = false;
+		if( EO.three.keyboard.eventMatches(event, 's') ) {
+			EO.input.keyboard.down = false;
 		}
 		//left
-		if( GAME.three.keyboard.eventMatches(event, 'a') ) {
-			GAME.input.keyboard.left = false;
+		if( EO.three.keyboard.eventMatches(event, 'a') ) {
+			EO.input.keyboard.left = false;
 		}
 		//right
-		if( GAME.three.keyboard.eventMatches(event, 'd') ) {
-			GAME.input.keyboard.right = false;
+		if( EO.three.keyboard.eventMatches(event, 'd') ) {
+			EO.input.keyboard.right = false;
 		}
 	});
 
 }
 
 
-GAME.dom = {};
-GAME.dom.init = function() {
-	//document.body.appendChild( GAME.three.renderer.domElement );
+EO.dom = {};
+EO.dom.init = function() {
+	//document.body.appendChild( EO.three.renderer.domElement );
 }
 
-GAME.map = {};
-GAME.map.init = function() {
+EO.map = {};
+EO.map.init = function() {
 	this.width = 48;
 	this.height = 48;
 	this.offsetX = this.width / 2;
@@ -181,24 +157,24 @@ GAME.map.init = function() {
 	this.draw();
 	//console.log(this.array);
 }
-GAME.map.generate = function() {
+EO.map.generate = function() {
 	this.array = [];
 	for (var i=0; i<this.width; i++) {
 		this.array[i] = [];
 		for (var j=0; j<this.height; j++) {
-			GAME.map.array[i][j] = this.tile.generate();
+			EO.map.array[i][j] = this.tile.generate();
 		}
 	}
 }
-GAME.map.tile = {};
-GAME.map.tile.init = function() {
+EO.map.tile = {};
+EO.map.tile.init = function() {
 	this.width = 64;
 	this.height = 64;
 	this.depth = 1;
 	this.geometry = new THREE.CubeGeometry( this.width, this.height, this.depth );
 }
 
-GAME.map.tile.generate = function() {
+EO.map.tile.generate = function() {
 	var tile = {};
 	tile.width = this.width;
 	tile.height = this.height;
@@ -213,16 +189,16 @@ GAME.map.tile.generate = function() {
 	//tile.material = this.material;
 	//tile.material = new THREE.MeshBasicMaterial( { color: color } );
 	
-	tile.material = GAME.preload.grass;
+	tile.material = EO.preload.grass;
 	if (Math.random() > .3) {
-		tile.material = GAME.preload.grass;
+		tile.material = EO.preload.grass;
 	} else {
-		tile.material = GAME.preload.water;
+		tile.material = EO.preload.water;
 	}
 	tile.mesh = new THREE.Mesh( this.geometry, tile.material );
 	return tile;
 }
-GAME.map.draw = function() {
+EO.map.draw = function() {
 	for (i=0; i<this.array.length; i++) {
 		for (var j=0; j<this.array[i].length; j++) {
 			var startX = i * 64;
@@ -230,117 +206,117 @@ GAME.map.draw = function() {
 			this.array[i][j].mesh.position.set( startX - this.offsetX * this.tile.width, startY - this.offsetY * this.tile.height, 0 )
 			this.array[i][j].mesh.castShadow = true;
 			this.array[i][j].mesh.receiveShadow = true;
-			GAME.three.scene.add( this.array[i][j].mesh );
+			EO.three.scene.add( this.array[i][j].mesh );
 		}
 	}
 }
 
-GAME.util = {};
-GAME.util.frame = 0;
+EO.util = {};
+EO.util.frame = 0;
 
-GAME.util.update = function() {
-	//console.log(GAME.util.frame);
-	GAME.textures.water.offset.y = GAME.util.frame / 3;
+EO.util.update = function() {
+	//console.log(EO.util.frame);
+	EO.textures.water.offset.y = EO.util.frame / 3;
 }
 var clock = new THREE.Clock();
-GAME.render = function() {
-	requestAnimationFrame( GAME.render );
-	if (GAME.character.mesh && GAME.three.camera) {
-		GAME.three.camera.position.x = GAME.character.mesh.position.x;
-		GAME.three.camera.position.y = GAME.character.mesh.position.y -200;
-		GAME.three.camera.lookAt(GAME.character.mesh.position);
-		GAME.three.camera.updateProjectionMatrix();
+EO.render = function() {
+	requestAnimationFrame( EO.render );
+	if (EO.character.mesh && EO.three.camera) {
+		EO.three.camera.position.x = EO.character.mesh.position.x;
+		EO.three.camera.position.y = EO.character.mesh.position.y -200;
+		EO.three.camera.lookAt(EO.character.mesh.position);
+		EO.three.camera.updateProjectionMatrix();
 	}
 	
 	var delta = 0.75 * clock.getDelta();
 
 	var f = Math.floor(Date.now() / 600) % 3;
-	if (f !== GAME.util.frame) {
-		GAME.util.update();
+	if (f !== EO.util.frame) {
+		EO.util.update();
 	}
-	GAME.util.frame = f;
+	EO.util.frame = f;
 
-	if (GAME.character.mixer) {
-		GAME.character.mixer.update( delta );
-		GAME.character.helper.update();
+	if (EO.character.mixer) {
+		EO.character.mixer.update( delta );
+		EO.character.helper.update();
 	}
 
-	GAME.input.keyboard.update();
+	EO.input.keyboard.update();
 
 
-	//GAME.three.camera.position.z = Math.abs( Math.cos( timer ) * 4200 );
+	//EO.three.camera.position.z = Math.abs( Math.cos( timer ) * 4200 );
 
-	//GAME.three.camera.position.y = Math.sin( timer ) * 250;// - GAME.map.width;
-	//GAME.three.camera.position.x = Math.cos( timer ) * 250;
-	//console.log(GAME.three.camera.position.y);
+	//EO.three.camera.position.y = Math.sin( timer ) * 250;// - EO.map.width;
+	//EO.three.camera.position.x = Math.cos( timer ) * 250;
+	//console.log(EO.three.camera.position.y);
 	
-	//GAME.three.camera.position.x = -139.72;
+	//EO.three.camera.position.x = -139.72;
 
-	//GAME.three.controls.update();
+	//EO.three.controls.update();
 
-	window.scene = GAME.three.scene;
+	window.scene = EO.three.scene;
 
-	//GAME.three.camera.lookAt( new THREE.Vector3(0, 0, 0) );
-	//GAME.three.camera.updateProjectionMatrix();
+	//EO.three.camera.lookAt( new THREE.Vector3(0, 0, 0) );
+	//EO.three.camera.updateProjectionMatrix();
 	//
-	GAME.three.renderer.render( GAME.three.scene, GAME.three.camera );
+	EO.three.renderer.render( EO.three.scene, EO.three.camera );
 }
 
-GAME.character = {};
+EO.character = {};
 
-GAME.init = function() {
-	GAME.preload.init(function() {
+EO.init = function() {
+	EO.preload.init(function() {
 
-		GAME.three.init();
-		GAME.dom.init();
-		GAME.map.init();
+		EO.three.init();
+		EO.dom.init();
+		EO.map.init();
 		//midpoint
-		GAME.three.midpoint = new THREE.Vector3(GAME.map.width / 2 * GAME.map.tile.width, GAME.map.height / 2 * GAME.map.tile.height, 1);
-		//GAME.three.scene.add(GAME.three.midpoint);
-		//GAME.three.midpoint.add(GAME.three.camera);
-		//GAME.three.camera.position.copy(GAME.three.midpoint);
+		EO.three.midpoint = new THREE.Vector3(EO.map.width / 2 * EO.map.tile.width, EO.map.height / 2 * EO.map.tile.height, 1);
+		//EO.three.scene.add(EO.three.midpoint);
+		//EO.three.midpoint.add(EO.three.camera);
+		//EO.three.camera.position.copy(EO.three.midpoint);
 		//lights
 		var ambientLight = new THREE.AmbientLight( 0xcccccc );
 		ambientLight.intensity = .5;
-		GAME.three.scene.add( ambientLight );
+		EO.three.scene.add( ambientLight );
 		hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
 		hemiLight.color.setHSL( 0.6, 1, 0.6 );
 		hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
 		hemiLight.position.set( 0, 500, 0 );
-		//GAME.three.scene.add( hemiLight );
+		//EO.three.scene.add( hemiLight );
 		//shadow lighting
-		GAME.three.dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
-		GAME.three.dirLight.color.setHSL( 0.1, 1, 0.95 );
-		GAME.three.dirLight.position.set( 1, -1.75, 4 );
-		GAME.three.dirLight.position.multiplyScalar( 50 );
-		GAME.three.dirLight.castShadow = true;
+		EO.three.dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+		EO.three.dirLight.color.setHSL( 0.1, 1, 0.95 );
+		EO.three.dirLight.position.set( 1, -1.75, 4 );
+		EO.three.dirLight.position.multiplyScalar( 50 );
+		EO.three.dirLight.castShadow = true;
 
-		GAME.three.dirLight.shadow.mapSize.width = 2048;
-		GAME.three.dirLight.shadow.mapSize.height = 2048;
+		EO.three.dirLight.shadow.mapSize.width = 2048;
+		EO.three.dirLight.shadow.mapSize.height = 2048;
 
 		var d = 500;
 
-		GAME.three.dirLight.shadow.camera.left = -d;
-		GAME.three.dirLight.shadow.camera.right = d;
-		GAME.three.dirLight.shadow.camera.top = d;
-		GAME.three.dirLight.shadow.camera.bottom = -d;
+		EO.three.dirLight.shadow.camera.left = -d;
+		EO.three.dirLight.shadow.camera.right = d;
+		EO.three.dirLight.shadow.camera.top = d;
+		EO.three.dirLight.shadow.camera.bottom = -d;
 
-		GAME.three.dirLight.shadow.camera.far = 3500;
-		GAME.three.dirLight.shadow.bias = -0.0001;
-		GAME.three.dirLight.shadow.camera.visible = true;
-		GAME.three.scene.add( GAME.three.dirLight );
+		EO.three.dirLight.shadow.camera.far = 3500;
+		EO.three.dirLight.shadow.bias = -0.0001;
+		EO.three.dirLight.shadow.camera.visible = true;
+		EO.three.scene.add( EO.three.dirLight );
 
 
 		//render
-		GAME.three.renderer.setClearColor( 0xbfd1e5 );
-		GAME.three.renderer.setPixelRatio( window.devicePixelRatio );
-		GAME.render();
+		EO.three.renderer.setClearColor( 0xbfd1e5 );
+		EO.three.renderer.setPixelRatio( window.devicePixelRatio );
+		EO.render();
 
-		//GAME.three.camera.position.z = 200;
-		//GAME.three.camera.position.x = 0;
-		//GAME.three.camera.position.y = 0;
-		//this.three.camera.position.x = 0;//(GAME.map.width / 2) * GAME.map.tile.width;
-		//this.three.camera.position.y = (GAME.map.height / 2) * GAME.map.tile.height;
+		//EO.three.camera.position.z = 200;
+		//EO.three.camera.position.x = 0;
+		//EO.three.camera.position.y = 0;
+		//this.three.camera.position.x = 0;//(EO.map.width / 2) * EO.map.tile.width;
+		//this.three.camera.position.y = (EO.map.height / 2) * EO.map.tile.height;
 
 	});
 
@@ -359,38 +335,38 @@ GAME.init = function() {
 				//materials[0].shininess = 0;
 				//var material = new THREE.MultiMaterial( materials );
 				//var material = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 20, morphTargets: true, vertexColors: THREE.FaceColors, shading: THREE.FlatShading } );
-				//GAME.character.mesh = new THREE.SkinnedMesh( geometry, material );
-				GAME.character.mesh = object.children[0];
-				GAME.character.mesh.material.skinning = true;
-				GAME.character.mesh.scale.x = 6;
-				GAME.character.mesh.scale.y = 6;
-				GAME.character.mesh.scale.z = 6;
-				//GAME.character.mesh.castShadow = true;
-				//GAME.character.mesh.receiveShadow = true;
+				//EO.character.mesh = new THREE.SkinnedMesh( geometry, material );
+				EO.character.mesh = object.children[0];
+				EO.character.mesh.material.skinning = true;
+				EO.character.mesh.scale.x = 6;
+				EO.character.mesh.scale.y = 6;
+				EO.character.mesh.scale.z = 6;
+				//EO.character.mesh.castShadow = true;
+				//EO.character.mesh.receiveShadow = true;
 				//mesh.position.z = 51;
-				//GAME.character.mesh.rotateX(135);
-				GAME.character.mesh.rotation.x = 1.45;
-				// GAME.character.mesh.traverse( function(child) {
+				//EO.character.mesh.rotateX(135);
+				EO.character.mesh.rotation.x = 1.45;
+				// EO.character.mesh.traverse( function(child) {
 				// 	if ( child instanceof THREE.Mesh ) {
 				//         child.castShadow = true;
 				// 		child.receiveShadow = true;
 				//     }
 				// });
-				GAME.three.scene.add( GAME.character.mesh );
+				EO.three.scene.add( EO.character.mesh );
 
-				GAME.character.helper = new THREE.SkeletonHelper( GAME.character.mesh );
-				GAME.character.helper.material.linewidth = 1;
-				GAME.character.helper.visible = false;
-				//GAME.character.helper.rotateX(135);
-				GAME.three.scene.add( GAME.character.helper );
+				EO.character.helper = new THREE.SkeletonHelper( EO.character.mesh );
+				EO.character.helper.material.linewidth = 1;
+				EO.character.helper.visible = false;
+				//EO.character.helper.rotateX(135);
+				EO.three.scene.add( EO.character.helper );
 
-				GAME.character.mixer = new THREE.AnimationMixer( GAME.character.mesh );
-				GAME.character.action = {}
-				//GAME.character.action.stand = new THREE.AnimationAction( geometry.animations[ 0 ] );
-				GAME.character.action.walk  = GAME.character.mixer.clipAction( GAME.character.mesh.geometry.animations[0], GAME.character.mesh );
-				GAME.character.action.two = GAME.character.mixer.clipAction( GAME.character.mesh.geometry.animations[1] );
-				GAME.character.action.three = GAME.character.mixer.clipAction( GAME.character.mesh.geometry.animations[2] );
-				//console.log(GAME.character.action.walk);
+				EO.character.mixer = new THREE.AnimationMixer( EO.character.mesh );
+				EO.character.action = {}
+				//EO.character.action.stand = new THREE.AnimationAction( geometry.animations[ 0 ] );
+				EO.character.action.walk  = EO.character.mixer.clipAction( EO.character.mesh.geometry.animations[0], EO.character.mesh );
+				EO.character.action.two = EO.character.mixer.clipAction( EO.character.mesh.geometry.animations[1] );
+				EO.character.action.three = EO.character.mixer.clipAction( EO.character.mesh.geometry.animations[2] );
+				//console.log(EO.character.action.walk);
 				//
 				//
 				//
@@ -418,33 +394,33 @@ GAME.init = function() {
 	// 			materials[0].shininess = 0;
 	// 			var material = new THREE.MultiMaterial( materials );
 	// 			//var material = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 20, morphTargets: true, vertexColors: THREE.FaceColors, shading: THREE.FlatShading } );
-	// 			GAME.character.mesh = new THREE.SkinnedMesh( geometry, material );
-	// 			GAME.character.mesh.castShadow = true;
-	// 			GAME.character.mesh.receiveShadow = true;
+	// 			EO.character.mesh = new THREE.SkinnedMesh( geometry, material );
+	// 			EO.character.mesh.castShadow = true;
+	// 			EO.character.mesh.receiveShadow = true;
 	// 			//mesh.position.z = 51;
-	// 			GAME.character.mesh.rotateX(135);
-	// 			GAME.character.mesh.traverse( function(child) {
+	// 			EO.character.mesh.rotateX(135);
+	// 			EO.character.mesh.traverse( function(child) {
 	// 				if ( child instanceof THREE.Mesh ) {
 	// 			        child.castShadow = true;
 	// 					child.receiveShadow = true;
 	// 			    }
 	// 			});
-	// 			GAME.three.scene.add( GAME.character.mesh );
+	// 			EO.three.scene.add( EO.character.mesh );
 
-	// 			//GAME.character.helper = new THREE.SkeletonHelper( GAME.character.mesh );
-	// 			//GAME.character.helper.material.linewidth = 3;
-	// 			//GAME.character.helper.visible = true;
-	// 			//GAME.character.helper.rotateX(135);
-	// 			//GAME.three.scene.add( GAME.character.helper );
+	// 			//EO.character.helper = new THREE.SkeletonHelper( EO.character.mesh );
+	// 			//EO.character.helper.material.linewidth = 3;
+	// 			//EO.character.helper.visible = true;
+	// 			//EO.character.helper.rotateX(135);
+	// 			//EO.three.scene.add( EO.character.helper );
 
-	// 			GAME.character.mixer = new THREE.AnimationMixer( GAME.character.mesh );
-	// 			GAME.character.action = {}
-	// 			//GAME.character.action.stand = new THREE.AnimationAction( geometry.animations[ 0 ] );
-	// 			GAME.character.action.walk = GAME.character.mixer.clipAction( geometry.animations[2] );
-	// 			console.log(GAME.character.action.walk);
-	// 			GAME.character.action.walk.play();
+	// 			EO.character.mixer = new THREE.AnimationMixer( EO.character.mesh );
+	// 			EO.character.action = {}
+	// 			//EO.character.action.stand = new THREE.AnimationAction( geometry.animations[ 0 ] );
+	// 			EO.character.action.walk = EO.character.mixer.clipAction( geometry.animations[2] );
+	// 			console.log(EO.character.action.walk);
+	// 			EO.character.action.walk.play();
 	// 		}
 	// 	);
 }
 
-GAME.init();
+EO.init();
