@@ -36,7 +36,7 @@ app.use(require('express-session')({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-server.listen(3000);
+server.listen(8081);
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/public/index.html');
