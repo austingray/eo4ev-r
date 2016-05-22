@@ -1,27 +1,26 @@
 var EO = EO || {};
 
-EO.width = 800;
-EO.height = 600;
+//	Settings
+//		global settings
+EO.settings = {};
+EO.settings.width = 800;
+EO.settings.height = 600;
+EO.settings.clock = new THREE.Clock();
 
-EO.preload = {};
-EO.preload.grass;
-EO.preload.init = function(init) {
-	var textureLoader = new THREE.TextureLoader();
-	var grass = textureLoader.load('img/tiles/grass/grass1.png');
-	
-	EO.textures.water = textureLoader.load('img/tiles/water/water-animated.png');
-	EO.textures.water.wrapS = EO.textures.water.wrapT = THREE.RepeatWrapping; 
-	EO.textures.water.repeat.set( 1 / 3, 1 );
-	//var grass = textureLoader.load('img/grass_64.jpg');
-	//grass.wrapS = grass.wrapT = THREE.RepeatWrapping;
-	EO.preload.grass = new THREE.MeshPhongMaterial({ map: grass });
-	EO.preload.grass.receiveShadow = true;
-	EO.preload.water = new THREE.MeshPhongMaterial({ map: EO.textures.water });
-	EO.preload.water.receiveShadow = true;
-	init();
+EO.util = {};
+EO.util.frame = 0;
+EO.util.update = function() {
+	//console.log(EO.util.frame);
+	//EO.textures.water.offset.y = EO.util.frame / 3;
+	for (var i = 0; i < EO.tiles.type.length; i++) {
+		for (var j = 0; j < EO.tiles.type[i].length; j++) {
+			if (EO.tiles.type[i][j].animated) {
+				EO.tiles.type[i][j].offset.y = EO.util.frame / 3;
+			}
+		}
+	}
 }
 
-EO.textures = {};
 EO.input = {};
 EO.input.keyboard = {};
 EO.input.keyboard.left = false;
@@ -67,31 +66,50 @@ EO.input.keyboard.update = function() {
 	}
 	if (EO.character.action) {
 		if ( EO.input.keyboard.left === false && EO.input.keyboard.up === false && EO.input.keyboard.right === false && EO.input.keyboard.down === false ) {
-			EO.character.action.walk.stop();
+			
+			if (EO.hero.walking) {
+				socket.emit('stop', { walking: false });
+				EO.hero.walking = false;
+			}
 		} else {
-			EO.character.action.walk.play();
-			if (cLeft) EO.character.mesh.position.x = EO.character.mesh.position.x - mSpeed;
-			if (cRight) EO.character.mesh.position.x = EO.character.mesh.position.x + mSpeed;
-			if (cDown) EO.character.mesh.position.y = EO.character.mesh.position.y - mSpeed;
-			if (cUp) EO.character.mesh.position.y = EO.character.mesh.position.y + mSpeed;
-			EO.character.mesh.rotation.y = cRot;
+			//EO.character.action.walk.play();
+			EO.hero.walking = true;
+			var x = 0;
+			var y = 0;
+			if (cLeft) x = x - mSpeed;
+			if (cRight) x = x + mSpeed;
+			if (cDown) y = y - mSpeed;
+			if (cUp) y = y + mSpeed;
+			var pos_update = {
+				walking: true,
+				rot: cRot,
+				x: x,
+				y: y,
+				z: 0
+			}
+			socket.emit('move', pos_update);
 		}
 	}
 
 }
+
 EO.three = {};
 EO.three.init = function() {
 	//scene
 	this.scene = new THREE.Scene();
 	//camera
-	//this.camera = new THREE.PerspectiveCamera( 75, EO.width / EO.height, .1, 10000 );
-	this.camera = new THREE.OrthographicCamera( (EO.width / - 2), (EO.width / 2), (EO.height / 2), ( EO.height / - 2), -1000, 1000 );
-	//this.camera.rotation.x = .75;
+	var camera_left = EO.settings.width / - 2;
+	var camera_right = EO.settings.width / 2;
+	var camera_top = EO.settings.height / 2;
+	var camera_bottom = EO.settings.height / - 2;
+	var near = -1000;
+	var far = 1000;
+	this.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
 	this.camera.position.z = 200;
 	//renderer
 	var canvas = document.getElementById("gamecanvas");
 	this.renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
-	this.renderer.setSize( EO.width, EO.height );
+	this.renderer.setSize( EO.settings.width, EO.settings.height );
 	this.renderer.shadowMap.enabled = true;
 	//this.renderer.shadowMap.cullFace = true;
 	//keyboard
@@ -138,140 +156,7 @@ EO.three.init = function() {
 		}
 	});
 
-}
-
-
-EO.dom = {};
-EO.dom.init = function() {
-	//document.body.appendChild( EO.three.renderer.domElement );
-}
-
-EO.map = {};
-EO.map.init = function() {
-	this.width = 48;
-	this.height = 48;
-	this.offsetX = this.width / 2;
-	this.offsetY = this.height / 2;
-	this.tile.init();
-	this.generate();
-	this.draw();
-	//console.log(this.array);
-}
-EO.map.generate = function() {
-	this.array = [];
-	for (var i=0; i<this.width; i++) {
-		this.array[i] = [];
-		for (var j=0; j<this.height; j++) {
-			EO.map.array[i][j] = this.tile.generate();
-		}
-	}
-}
-EO.map.tile = {};
-EO.map.tile.init = function() {
-	this.width = 64;
-	this.height = 64;
-	this.depth = 1;
-	this.geometry = new THREE.CubeGeometry( this.width, this.height, this.depth );
-}
-
-EO.map.tile.generate = function() {
-	var tile = {};
-	tile.width = this.width;
-	tile.height = this.height;
-	var color = 0x00AE00;
-	if (Math.random() > .5) {
-		color = 0x00FF00;
-	}
-	//tile.geometry = new THREE.BoxGeometry( tile.width, tile.height, 1 );
-	//tile.material = new THREE.MeshBasicMaterial( { color: color } );
-	//tile.cube = new THREE.Mesh( tile.geometry, tile.material );
-	tile.geometry = this.geometry;
-	//tile.material = this.material;
-	//tile.material = new THREE.MeshBasicMaterial( { color: color } );
-	
-	tile.material = EO.preload.grass;
-	if (Math.random() > .3) {
-		tile.material = EO.preload.grass;
-	} else {
-		tile.material = EO.preload.water;
-	}
-	tile.mesh = new THREE.Mesh( this.geometry, tile.material );
-	return tile;
-}
-EO.map.draw = function() {
-	for (i=0; i<this.array.length; i++) {
-		for (var j=0; j<this.array[i].length; j++) {
-			var startX = i * 64;
-			var startY = j * 64;
-			this.array[i][j].mesh.position.set( startX - this.offsetX * this.tile.width, startY - this.offsetY * this.tile.height, 0 )
-			this.array[i][j].mesh.castShadow = true;
-			this.array[i][j].mesh.receiveShadow = true;
-			EO.three.scene.add( this.array[i][j].mesh );
-		}
-	}
-}
-
-EO.util = {};
-EO.util.frame = 0;
-
-EO.util.update = function() {
-	//console.log(EO.util.frame);
-	EO.textures.water.offset.y = EO.util.frame / 3;
-}
-var clock = new THREE.Clock();
-EO.render = function() {
-	requestAnimationFrame( EO.render );
-	if (EO.character.mesh && EO.three.camera) {
-		EO.three.camera.position.x = EO.character.mesh.position.x;
-		EO.three.camera.position.y = EO.character.mesh.position.y -200;
-		EO.three.camera.lookAt(EO.character.mesh.position);
-		EO.three.camera.updateProjectionMatrix();
-	}
-	
-	var delta = 0.75 * clock.getDelta();
-
-	var f = Math.floor(Date.now() / 600) % 3;
-	if (f !== EO.util.frame) {
-		EO.util.update();
-	}
-	EO.util.frame = f;
-
-	if (EO.character.mixer) {
-		EO.character.mixer.update( delta );
-		EO.character.helper.update();
-	}
-
-	EO.input.keyboard.update();
-
-
-	//EO.three.camera.position.z = Math.abs( Math.cos( timer ) * 4200 );
-
-	//EO.three.camera.position.y = Math.sin( timer ) * 250;// - EO.map.width;
-	//EO.three.camera.position.x = Math.cos( timer ) * 250;
-	//console.log(EO.three.camera.position.y);
-	
-	//EO.three.camera.position.x = -139.72;
-
-	//EO.three.controls.update();
-
-	window.scene = EO.three.scene;
-
-	//EO.three.camera.lookAt( new THREE.Vector3(0, 0, 0) );
-	//EO.three.camera.updateProjectionMatrix();
-	//
-	EO.three.renderer.render( EO.three.scene, EO.three.camera );
-}
-
-EO.character = {};
-
-EO.init = function() {
-	EO.preload.init(function() {
-
-		EO.three.init();
-		EO.dom.init();
-		EO.map.init();
-		//midpoint
-		EO.three.midpoint = new THREE.Vector3(EO.map.width / 2 * EO.map.tile.width, EO.map.height / 2 * EO.map.tile.height, 1);
+	EO.three.midpoint = new THREE.Vector3(EO.map.width / 2 * 64, EO.map.height / 2 * 64, 1);
 		//EO.three.scene.add(EO.three.midpoint);
 		//EO.three.midpoint.add(EO.three.camera);
 		//EO.three.camera.position.copy(EO.three.midpoint);
@@ -305,20 +190,9 @@ EO.init = function() {
 		EO.three.dirLight.shadow.bias = -0.0001;
 		EO.three.dirLight.shadow.camera.visible = true;
 		EO.three.scene.add( EO.three.dirLight );
-
-
-		//render
 		EO.three.renderer.setClearColor( 0xbfd1e5 );
 		EO.three.renderer.setPixelRatio( window.devicePixelRatio );
-		EO.render();
-
-		//EO.three.camera.position.z = 200;
-		//EO.three.camera.position.x = 0;
-		//EO.three.camera.position.y = 0;
-		//this.three.camera.position.x = 0;//(EO.map.width / 2) * EO.map.tile.width;
-		//this.three.camera.position.y = (EO.map.height / 2) * EO.map.tile.height;
-
-	});
+	
 
 	var animation;
 	// instantiate a loader
@@ -328,37 +202,38 @@ EO.init = function() {
 		// load a resource
 		loader.load(
 			// resource URL
-			'/js/models/updated_export_8.json',
+			'js/models/updated_export_8.json',
 			// Function when resource is loaded
 			function ( object ) {
-				console.log(object);
 				//materials[0].shininess = 0;
 				//var material = new THREE.MultiMaterial( materials );
 				//var material = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 20, morphTargets: true, vertexColors: THREE.FaceColors, shading: THREE.FlatShading } );
 				//EO.character.mesh = new THREE.SkinnedMesh( geometry, material );
+				//EO.character.ref = object;
 				EO.character.mesh = object.children[0];
-				EO.character.mesh.material.skinning = true;
-				EO.character.mesh.scale.x = 6;
-				EO.character.mesh.scale.y = 6;
-				EO.character.mesh.scale.z = 6;
+				EO.character.object = object;
+				EO.character.material = object.children[0].material;
+				EO.character.geometry = object.children[0].geometry;
+
 				//EO.character.mesh.castShadow = true;
 				//EO.character.mesh.receiveShadow = true;
 				//mesh.position.z = 51;
 				//EO.character.mesh.rotateX(135);
-				EO.character.mesh.rotation.x = 1.45;
+				//EO.character.mesh.material.skinning = true;
+
 				// EO.character.mesh.traverse( function(child) {
 				// 	if ( child instanceof THREE.Mesh ) {
 				//         child.castShadow = true;
 				// 		child.receiveShadow = true;
 				//     }
 				// });
-				EO.three.scene.add( EO.character.mesh );
+				//EO.three.scene.add( EO.character.mesh );
 
 				EO.character.helper = new THREE.SkeletonHelper( EO.character.mesh );
 				EO.character.helper.material.linewidth = 1;
 				EO.character.helper.visible = false;
 				//EO.character.helper.rotateX(135);
-				EO.three.scene.add( EO.character.helper );
+				//EO.three.scene.add( EO.character.helper );
 
 				EO.character.mixer = new THREE.AnimationMixer( EO.character.mesh );
 				EO.character.action = {}
@@ -370,57 +245,205 @@ EO.init = function() {
 				//
 				//
 				//
-				
 		
 				
 				
 			}
 		);
-
-
-
-	// 	var animation;
-	// // instantiate a loader
-	// 	var loader = new THREE.JSONLoader();
-	// 	loader.castShadow = true;
-
-	// 	// load a resource
-	// 	loader.load(
-	// 		// resource URL
-	// 		'/threed/js/models/eo4ev_walk_stand_2json.json',
-	// 		// Function when resource is loaded
-	// 		function ( geometry, materials ) {
-	// 			console.log(materials);
-	// 			materials[0].shininess = 0;
-	// 			var material = new THREE.MultiMaterial( materials );
-	// 			//var material = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 20, morphTargets: true, vertexColors: THREE.FaceColors, shading: THREE.FlatShading } );
-	// 			EO.character.mesh = new THREE.SkinnedMesh( geometry, material );
-	// 			EO.character.mesh.castShadow = true;
-	// 			EO.character.mesh.receiveShadow = true;
-	// 			//mesh.position.z = 51;
-	// 			EO.character.mesh.rotateX(135);
-	// 			EO.character.mesh.traverse( function(child) {
-	// 				if ( child instanceof THREE.Mesh ) {
-	// 			        child.castShadow = true;
-	// 					child.receiveShadow = true;
-	// 			    }
-	// 			});
-	// 			EO.three.scene.add( EO.character.mesh );
-
-	// 			//EO.character.helper = new THREE.SkeletonHelper( EO.character.mesh );
-	// 			//EO.character.helper.material.linewidth = 3;
-	// 			//EO.character.helper.visible = true;
-	// 			//EO.character.helper.rotateX(135);
-	// 			//EO.three.scene.add( EO.character.helper );
-
-	// 			EO.character.mixer = new THREE.AnimationMixer( EO.character.mesh );
-	// 			EO.character.action = {}
-	// 			//EO.character.action.stand = new THREE.AnimationAction( geometry.animations[ 0 ] );
-	// 			EO.character.action.walk = EO.character.mixer.clipAction( geometry.animations[2] );
-	// 			console.log(EO.character.action.walk);
-	// 			EO.character.action.walk.play();
-	// 		}
-	// 	);
 }
 
-EO.init();
+//	Tiles
+//		holds all tile data
+EO.tiles = {};
+EO.tiles.textures = [
+	{ type:'grass', name: 'Grass 1', file:'img/tiles/grass/grass1.png', animated: false },
+	{ type:'water', name: 'Water 1', file:'img/tiles/water/water-animated.png', animated: true, frames: 3 }
+];
+EO.tiles.type = {};
+EO.tiles.type.grass = [];
+EO.tiles.type.water = [];
+EO.tiles.init = function() {
+	
+	for (var i = 0; i < EO.tiles.textures.length; i++) {
+		var texture = EO.tiles.textures[i];
+		var tLoader = new THREE.TextureLoader();
+		var t = tLoader.load( texture.file );
+		if (texture.animated) {
+			t.wrapS = t.wrapT = THREE.RepeatWrapping;
+			t.repeat.set( 1 / texture.frames, 1 );
+		}
+		var mesh = new THREE.MeshPhongMaterial({ map: t });
+		mesh.receiveShadow = true;
+		EO.tiles.type[texture.type].push(mesh);
+	}
+
+}
+
+EO.map = {};
+EO.map.init = function() {
+	this.width = 48;
+	this.height = 48;
+	this.offsetX = this.width / 2;
+	this.offsetY = this.height / 2;
+	EO.map.draw();
+}
+EO.map.draw = function() {
+	for (i=0; i<this.array.length; i++) {
+		for (var j=0; j<this.array[i].length; j++) {
+			var startX = i * 64;
+			var startY = j * 64;
+			var geometry = new THREE.CubeGeometry( 64, 64, 1 );
+			var material = EO.tiles.type[this.array[i][j].material][0];
+			// this.array[i][j].mesh = new THREE.Mesh( geometry, material );
+			// this.array[i][j].mesh.position.set( startX - this.offsetX * 64, startY - this.offsetY * 64, 0 )
+			// this.array[i][j].mesh.castShadow = true;
+			// this.array[i][j].mesh.receiveShadow = true;
+			//
+			var mesh = new THREE.Mesh( geometry, material );
+			mesh.position.set( startX - this.offsetX * 64, startY - this.offsetY * 64, 0 )
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
+			EO.three.scene.add( mesh );
+		}
+	}
+}
+
+EO.character = {};
+
+EO.render = function() {
+	
+	var delta = 0.75 * EO.settings.clock.getDelta();
+
+	var f = Math.floor(Date.now() / 600) % 3;
+	if (f !== EO.util.frame) {
+		EO.util.update();
+	}
+	EO.util.frame = f;
+
+	if (EO.character.mixer) {
+		EO.character.mixer.update( delta );
+		EO.character.helper.update();
+	}
+
+	EO.input.keyboard.update();
+
+
+	//EO.three.camera.position.z = Math.abs( Math.cos( timer ) * 4200 );
+
+	//EO.three.camera.position.y = Math.sin( timer ) * 250;// - EO.map.width;
+	//EO.three.camera.position.x = Math.cos( timer ) * 250;
+	//console.log(EO.three.camera.position.y);
+	
+	//EO.three.camera.position.x = -139.72;
+
+	//EO.three.controls.update();
+	
+	if (EO.characters.count) {
+		for (var i = 0; i < EO.characters.count.length; i++ ) {
+			var index = EO.characters.count[i];
+			EO.characters.group[index].mixer.update( delta );
+			EO.characters.group[index].helper.update();
+		}
+	}
+
+	window.scene = EO.three.scene;
+
+	//EO.three.camera.lookAt( new THREE.Vector3(0, 0, 0) );
+	//EO.three.camera.updateProjectionMatrix();
+	//
+	EO.three.renderer.render( EO.three.scene, EO.three.camera );
+
+	requestAnimationFrame( EO.render );
+}
+
+
+EO.characters = {};
+EO.characters.group = [];
+EO.characters.add = function (name) {
+	if (EO.character.mesh) {
+		EO.characters.count = [];
+		EO.characters.count.push(name);
+		var obj = {};
+		EO.characters.group[name] = {};
+		//EO.characters.group[name].mesh = new THREE.Object3D();
+		//EO.characters.group[name].mesh.copy(EO.character.mesh, true);
+		//console.log(EO.characters.group[name].mesh);
+		//EO.characters.group[name].mesh = EO.character.mesh.clone(true);
+		// var geometry = EO.character.mesh.geometry.clone(true);
+		// geometry.bones = EO.character.mesh.geometry.bones;
+		// geometry.skinWeights = EO.character.mesh.geometry.skinWeights;
+		// geometry.skinIndices = EO.character.mesh.geometry.skinIndices;
+		// geometry.animations = EO.character.mesh.geometry.animations;
+		// geometry.animation = EO.character.mesh.geometry.animation;
+		//var material = EO.character.mesh.material.clone(true);
+		//EO.characters.group[name].mesh = new THREE.SkinnedMesh( geometry, material );
+		
+		EO.characters.group[name].mesh = EO.character.mesh.clone();
+		//EO.character.action.walk.play();
+		EO.characters.group[name].mesh.material.skinning = true;
+		EO.characters.group[name].mesh.scale.x = 6;
+		EO.characters.group[name].mesh.scale.y = 6;
+		EO.characters.group[name].mesh.scale.z = 6;
+		EO.characters.group[name].mesh.rotation.x = 1.45;
+		EO.characters.group[name].mesh.name = name;
+		
+		EO.three.scene.add(EO.characters.group[name].mesh);
+		
+		EO.characters.group[name].helper = new THREE.SkeletonHelper( EO.characters.group[name].mesh );
+		EO.characters.group[name].helper.material.linewidth = 1;
+		EO.characters.group[name].helper.visible = false;
+		EO.three.scene.add( EO.characters.group[name].helper );
+		
+		EO.characters.group[name].mixer = new THREE.AnimationMixer( EO.characters.group[name].mesh );
+		EO.characters.group[name].action = {}
+
+		EO.characters.group[name].action.walk = EO.characters.group[name].mixer.clipAction( EO.characters.group[name].mesh.geometry.animations[0] );
+
+
+
+	}
+}
+
+EO.hero = {};
+EO.hero.walking = false;
+
+EO.update = function(data) {
+	var charData = data.pos;
+	for (var i = 0; i < charData.length; i++) {
+		var exists = false;
+		if (charData[i] != null && charData[i].name) {
+			EO.three.scene.traverse( function (object) {
+				if (object.name === charData[i].name) {
+					//console.log(charData[i].name);
+					exists = true;
+					var pos = charData[i].pos;
+					object.position.set(pos.x, pos.y, pos.z);
+					object.rotation.y = charData[i].rot;
+					if (charData[i].walking) {
+						EO.characters.group[object.name].action.walk.play();
+					} else {
+						EO.characters.group[object.name].action.walk.stop();
+					}
+
+					if (object.name === EO.hero.id) {
+						EO.three.camera.position.x = object.position.x;
+						EO.three.camera.position.y = object.position.y -200;
+						EO.three.camera.lookAt(object.position);
+						EO.three.camera.updateProjectionMatrix();
+					}
+				}
+			});
+			if ( typeof EO.characters.group[charData[i].name] === 'undefined' ) {
+				EO.characters.add(charData[i].name);
+			}
+		}
+	}
+}
+
+
+EO.init = function() {
+	EO.three.init();
+	EO.tiles.init();
+	EO.map.init();
+	EO.render();
+}
