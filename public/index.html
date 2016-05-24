@@ -100,8 +100,11 @@
 	  });
 
 	  socket.on('id', function(data) {
-	  	console.log(data);
 	  	EO.hero.id = data;
+	  })
+
+	  socket.on('disconnect', function(data) {
+	  	EO.disconnect(data);
 	  })
 
 	  $(document).ready(function() {

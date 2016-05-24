@@ -71,37 +71,98 @@ io.on('connection', function (socket) {
     io.emit('chat', { user: user_arr[socketid].name, message: msg });
   });
 
-  socket.on('move', function(data) {
-  	for (var i = 0; i < user_map.length; i++) {
+  socket.on('input', function (data) {
+  	var x = 0;
+		var y = 0;
+		var z = 0;
+  	var walking = true;
+  	var mSpeed = 1.55;
+  	var cUp = data[0];
+  	var cRight = data[1];
+  	var cDown = data[2];
+  	var cLeft = data[3];
+  	if (cLeft) {
+			cRot = -1.6;
+		}
+		if (cRight) {
+			cRot = 1.6;
+		}
+		if (cDown) {
+			cRot = 0;
+		}
+		if (cUp) {
+			cRot = 3.20;
+		}
+		if (cLeft && cDown) {
+			cRot = -0.8;
+			mSpeed = 1;
+		}
+		if (cLeft && cUp) {
+			cRot = -2.4;
+			mSpeed = 1;
+		}
+		if (cRight && cDown) {
+			cRot = 0.8;
+			mSpeed = 1;
+		}
+		if (cRight && cUp) {
+			cRot = 2.4;
+			mSpeed = 1;
+		}
+		for (var i = 0; i < user_map.length; i++) {
   		if (socketid === user_map[i]) {
+
+				if (cLeft) x = x - mSpeed;
+				if (cRight) x = x + mSpeed;
+				if (cDown) y = y - mSpeed;
+				if (cUp) y = y + mSpeed;
+
+				if ( cUp === false && cRight === false && cDown === false && cLeft === false) {
+					walking = false;
+				}
+  			
   			var uname = user_arr[socketid].name;
   			if (typeof char_pos[i] != 'undefined') {
   				var old_pos = char_pos[i].pos;
   			} else {
   				var old_pos = {x: 0, y: 0, z: 0};
   			}
+  			if (typeof cRot === 'undefined') {
+  				if (typeof char_pos[i] === 'undefined') {
+  					cRot = 0;
+  				} else {
+  					cRot = char_pos[i].rot;
+  				}
+  			}
   			var new_pos = {};
-  			new_pos.x = old_pos.x + data.x;
-  			new_pos.y = old_pos.y + data.y;
-  			new_pos.z = old_pos.z + data.z;
+  			new_pos.x = old_pos.x + x;
+  			new_pos.y = old_pos.y + y;
+  			new_pos.z = old_pos.z + z;
   			char_pos[i] = {
-  				walking: true,
+  				walking: walking,
   				name: uname,
-  				rot: data.rot,
+  				rot: cRot,
   				pos: new_pos
   			};
   		}
   	}
   });
 
-  socket.on('stop', function(data) {
-  	for (var i = 0; i < user_map.length; i++) {
-  		if (socketid === user_map[i]) {
-  			char_pos[i].walking = false;
+  socket.on('disconnect', function () {
+  	
+  	var index = user_map.indexOf(socketid);
+  	if (index > -1) {
+  		var uname = user_arr[socketid].name;
+  		for (var i = 0; i < user_map.length; i++) {
+  			char_pos.splice(i, 1);
   		}
+  		user_map.splice(index, 1);
+  		delete user_arr[socketid];
   	}
+		io.emit('disconnect', {name: uname});
+    io.emit('user disconnected');
   });
-
+//end io
 });
 
 setInterval(function() {
@@ -109,7 +170,7 @@ setInterval(function() {
 }, 33);
 
 setInterval(function() {
-	console.log(char_pos);
+	//console.log(char_pos);
 }, 5000);
 
 
@@ -118,8 +179,8 @@ setInterval(function() {
 var GAME = {};
 GAME.map = {};
 GAME.map.init = function() {
-	this.width = 48;
-	this.height = 48;
+	this.width = 16;
+	this.height = 16;
 	this.tile.init();
 	this.generate();
 	//this.draw();
