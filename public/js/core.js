@@ -66,37 +66,37 @@ EO.three.init = function() {
 	
 	this.keyboard.domElement.addEventListener('keydown', function(event){
 		//up
-		if( EO.three.keyboard.eventMatches(event, 'w') ) {
+		if( EO.three.keyboard.eventMatches(event, 'w') || EO.three.keyboard.eventMatches(event, 'up') ) {
 			EO.input.keyboard.up = true;
 		}
 		//down
-		if( EO.three.keyboard.eventMatches(event, 's') ) {
+		if( EO.three.keyboard.eventMatches(event, 's') || EO.three.keyboard.eventMatches(event, 'down') ) {
 			EO.input.keyboard.down = true;
 		}
 		//left
-		if( EO.three.keyboard.eventMatches(event, 'a') ) {
+		if( EO.three.keyboard.eventMatches(event, 'a') || EO.three.keyboard.eventMatches(event, 'left') ) {
 			EO.input.keyboard.left = true;
 		}
 		//right
-		if( EO.three.keyboard.eventMatches(event, 'd') ) {
+		if( EO.three.keyboard.eventMatches(event, 'd') || EO.three.keyboard.eventMatches(event, 'right') ) {
 			EO.input.keyboard.right = true;
 		}
 	});
 	this.keyboard.domElement.addEventListener('keyup', function(event) {
 		//up
-		if( EO.three.keyboard.eventMatches(event, 'w') ) {
+		if( EO.three.keyboard.eventMatches(event, 'w') || EO.three.keyboard.eventMatches(event, 'up') ) {
 			EO.input.keyboard.up = false;
 		}
 		//down
-		if( EO.three.keyboard.eventMatches(event, 's') ) {
+		if( EO.three.keyboard.eventMatches(event, 's') || EO.three.keyboard.eventMatches(event, 'down') ) {
 			EO.input.keyboard.down = false;
 		}
 		//left
-		if( EO.three.keyboard.eventMatches(event, 'a') ) {
+		if( EO.three.keyboard.eventMatches(event, 'a') || EO.three.keyboard.eventMatches(event, 'left') ) {
 			EO.input.keyboard.left = false;
 		}
 		//right
-		if( EO.three.keyboard.eventMatches(event, 'd') ) {
+		if( EO.three.keyboard.eventMatches(event, 'd') || EO.three.keyboard.eventMatches(event, 'right') ) {
 			EO.input.keyboard.right = false;
 		}
 	});
@@ -202,8 +202,8 @@ EO.three.init = function() {
 EO.tiles = {};
 EO.tiles.textures = [
 	{ type:'grass', name: 'Grass 1', file:'img/tiles/grass/grass1.png', animated: false },
-	{ type:'water', name: 'Water 1', file:'img/tiles/water/water-animated.png', animated: true, frames: 3 },
-	{ type:'water', name: 'Water 2', file:'img/tiles/water/water-animated.png', animated: true, frames: 3 }
+	{ type:'water', name: 'Water 1', file:'img/tiles/water/water1.png', animated: true, frames: 4 },
+	{ type:'water', name: 'Water 2', file:'img/tiles/water/water1.png', animated: true, frames: 4 }
 ];
 EO.tiles.type = {};
 EO.tiles.type.grass = [];
@@ -215,11 +215,21 @@ EO.tiles.init = function() {
 		var texture = EO.tiles.textures[i];
 		var tLoader = new THREE.TextureLoader();
 		var t = tLoader.load( texture.file );
+		
+		t.repeat.set(20 , 20);
 		if (texture.animated) {
+			t.wrapS = t.wrapT = THREE.RepeatWrapping;//THREE.RepeatWrapping;
+			t.repeat.set( 20, 20 );
+
+		} else {
 			t.wrapS = t.wrapT = THREE.RepeatWrapping;
-			t.repeat.set( 1 / texture.frames, 1 );
 		}
+		//t.needsUpdate = true;
+		//t.image.width = 32;
 		var mesh = new THREE.MeshPhongMaterial({ map: t });
+		console.log(mesh.map['image']);
+		//mesh.map.image.width = 32;
+		//var mesh = new THREE.MeshBasicMaterial({ map: t });
 		mesh.receiveShadow = true;
 		EO.tiles.type[texture.type].push(mesh);
 		EO.tiles.materials.push(mesh);
@@ -228,13 +238,16 @@ EO.tiles.init = function() {
 }
 
 EO.map = {};
-EO.map.geometry = new THREE.PlaneGeometry(EO.settings.width, EO.settings.height, 10, 10);
+EO.map.geometry = new THREE.PlaneGeometry(1280, 1280, 20, 20);
 var l = EO.map.geometry.faces.length / 2;
 for (var i=0; i < l; i++) {
 	var j  = 2 * i;
-	EO.map.geometry.faces[j].materialIndex = i % 3;
-	EO.map.geometry.faces[j+1].materialIndex = i % 3;
+	var rand = Math.random();
+	EO.map.geometry.faces[j].materialIndex = 0.4 > rand ? 1 : 0;
+	EO.map.geometry.faces[j+1].materialIndex = 0.4 > rand ? 1 : 0;
 }
+EO.map.geometry.sortFacesByMaterialIndex();
+
 EO.map.init = function() {
 	this.width = 14;
 	this.height = 14;
