@@ -1,12 +1,28 @@
 var EO = EO || {};
 
-//	Settings
-//		global settings
+//////////////////////////////////////////////////
+// Init called when signal received from server //
+//////////////////////////////////////////////////
+EO.init = function() {
+	EO.three.init();
+	EO.character.init();
+	EO.tiles.init();
+	EO.map.init();
+	EO.input.init();
+	EO.render();
+}
+
+//////////////
+// Settings //
+//////////////
 EO.settings = {};
 EO.settings.width = 800;
 EO.settings.height = 600;
 EO.settings.clock = new THREE.Clock();
 
+//////////
+// Util //
+//////////
 EO.util = {};
 EO.util.frame = 0;
 EO.util.update = function() {
@@ -94,9 +110,9 @@ EO.character.init = function() {
 	});
 }
 
-////////////
-// Input  //
-////////////
+/////////////
+// Inputs  //
+/////////////
 EO.input = {};
 EO.input.init = function() {
 	EO.input.keyboard.init();
@@ -138,8 +154,9 @@ EO.input.keyboard.update = function() {
 	socket.emit('input', input_arr);
 }
 
-//	Tiles
-//		holds all tile data
+///////////
+// Tiles //
+///////////
 EO.tiles = {};
 EO.tiles.textures = [
 	{ type:'grass', name: 'Grass 1', file:'img/tiles/grass/grass1.png', animated: false },
@@ -178,6 +195,9 @@ EO.tiles.init = function() {
 
 }
 
+/////////
+// Map //
+/////////
 EO.map = {};
 EO.map.geometry = new THREE.PlaneGeometry(1280, 1280, 20, 20);
 var l = EO.map.geometry.faces.length / 2;
@@ -219,40 +239,33 @@ EO.map.draw = function() {
 }
 
 EO.render = function() {
-	
+		
+	//delta
 	var delta = 1.5 * EO.settings.clock.getDelta();
 
+	//util frame tick
 	var f = Math.floor(Date.now() / 600) % 3;
 	if (f !== EO.util.frame) {
 		EO.util.update();
 	}
 	EO.util.frame = f;
 
-	if (EO.character.mixer) {
-		EO.character.mixer.update( delta );
-		EO.character.helper.update();
-	}
-
+	//input updates
 	EO.input.keyboard.update();
 	
-	if (EO.characters.count) {
-		for (var i = 0; i < EO.characters.count.length; i++ ) {
-			//var index = EO.characters.count[i];
-			//EO.characters.group[index].mixer.update( delta );
-			
-			//EO.characters.group[index].helper.update();
-		}
-	}
+	//animation mixer update
 	if (EO.three.mixer) {
 		EO.three.mixer.update( delta );
 	}
 
+	//render frame
 	EO.three.renderer.render( EO.three.scene, EO.three.camera );
+
+	//request next frame
+	requestAnimationFrame( EO.render );
 
 	//export scene to window for three.js inspector
 	window.scene = EO.three.scene;
-
-	requestAnimationFrame( EO.render );
 }
 
 EO.characters = {};
@@ -320,21 +333,15 @@ EO.update = function(data) {
 	}
 }
 
-EO.disconnect = function(data) {
+////////////////////////
+// Socket.io handlers //
+////////////////////////
+EO.socket = {}
+EO.socket.disconnect = function(data) {
 	var user = data.name;
 	EO.three.scene.traverse( function (object) {
 		if (object.name === user) {
 			EO.three.scene.remove(object);
 		}
 	});
-}
-
-
-EO.init = function() {
-	EO.three.init();
-	EO.character.init();
-	EO.tiles.init();
-	EO.map.init();
-	EO.input.init();
-	EO.render();
 }
