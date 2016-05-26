@@ -21,27 +21,15 @@ EO.util.update = function() {
 	}
 }
 
-EO.input = {};
-EO.input.keyboard = {};
-EO.input.keyboard.left = false;
-EO.input.keyboard.right = false;
-EO.input.keyboard.up = false;
-EO.input.keyboard.down = false;
-EO.input.keyboard.update = function() {
-	var cUp = EO.input.keyboard.up;
-	var cRight = EO.input.keyboard.right;
-	var cDown = EO.input.keyboard.down;
-	var cLeft = EO.input.keyboard.left;
-	if (EO.character.action) {
-		var input_arr = [cUp, cRight, cDown, cLeft];
-		socket.emit('input', input_arr)
-	}
-}
-
+///////////////////
+// Three.js Core //
+///////////////////
 EO.three = {};
 EO.three.init = function() {
+	
 	//scene
-	this.scene = new THREE.Scene();
+	EO.three.scene = new THREE.Scene();
+	
 	//camera
 	var camera_left = EO.settings.width / - 2;
 	var camera_right = EO.settings.width / 2;
@@ -49,152 +37,105 @@ EO.three.init = function() {
 	var camera_bottom = EO.settings.height / - 2;
 	var near = -1000;
 	var far = 1000;
-	this.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
-	this.camera.position.z = 200;
+	EO.three.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
+	EO.three.camera.position.z = 200;
+	
 	//renderer
 	var canvas = document.getElementById("gamecanvas");
-	this.renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
-	this.renderer.setSize( EO.settings.width, EO.settings.height );
-	this.renderer.shadowMap.enabled = true;
-	//this.renderer.shadowMap.cullFace = true;
+	EO.three.renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
+	EO.three.renderer.setSize( EO.settings.width, EO.settings.height );
+	EO.three.renderer.shadowMap.enabled = true;
+	
+	//ambient light
+	var ambientLight = new THREE.AmbientLight( 0xcccccc );
+	ambientLight.intensity = .5;
+	EO.three.scene.add( ambientLight );
+	//dir lighting for shadow
+	EO.three.dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+	EO.three.dirLight.color.setHSL( 0.1, 1, 0.95 );
+	EO.three.dirLight.position.set( 1, -1.75, 4 );
+	EO.three.dirLight.position.multiplyScalar( 50 );
+	EO.three.dirLight.castShadow = true;
+	EO.three.dirLight.shadow.mapSize.width = 2048;
+	EO.three.dirLight.shadow.mapSize.height = 2048;
+	var d = 500;
+	EO.three.dirLight.shadow.camera.left = -d;
+	EO.three.dirLight.shadow.camera.right = d;
+	EO.three.dirLight.shadow.camera.top = d;
+	EO.three.dirLight.shadow.camera.bottom = -d;
+	EO.three.dirLight.shadow.camera.far = 3500;
+	EO.three.dirLight.shadow.bias = -0.0001;
+	EO.three.dirLight.shadow.camera.visible = true;
+	EO.three.scene.add( EO.three.dirLight );
+	
+	EO.three.renderer.setClearColor( 0xbfd1e5 );
+	EO.three.renderer.setPixelRatio( window.devicePixelRatio );
+	
+}
+
+//////////////////////////
+// Load character model //
+//////////////////////////
+EO.character = {};
+EO.character.init = function() {
+	//create loader
+	var loader = new THREE.ObjectLoader();
+	loader.castShadow = true;
+	// load our main model
+	loader.load( 'js/models/updated_export_8.json', function ( object ) {
+		EO.character.mesh = object.children[0];
+		EO.character.mesh.material.skinning = true;
+		EO.character.mesh.scale.x = 6;
+		EO.character.mesh.scale.y = 6;
+		EO.character.mesh.scale.z = 6;
+		EO.character.mesh.rotation.x = 1.45;
+		//instantiate mixer
+		EO.three.mixer = new THREE.AnimationMixer( EO.three.scene );
+	});
+}
+
+////////////
+// Input  //
+////////////
+EO.input = {};
+EO.input.init = function() {
+	EO.input.keyboard.init();
+}
+EO.input.keyboard = {};
+EO.input.keyboard.left = false;
+EO.input.keyboard.right = false;
+EO.input.keyboard.up = false;
+EO.input.keyboard.down = false;
+EO.input.keyboard.init = function() {
 	//keyboard
-	this.keyboard = new THREEx.KeyboardState(this.renderer.domElement);
-	this.renderer.domElement.setAttribute("tabIndex", "0");
-	this.renderer.domElement.focus();
-
+	EO.input.keyboard.controller = new THREEx.KeyboardState(EO.three.renderer.domElement);
+	EO.three.renderer.domElement.setAttribute("tabIndex", "0");
+	EO.three.renderer.domElement.focus();
 	// only on keydown
-	
-	this.keyboard.domElement.addEventListener('keydown', function(event){
+	EO.input.keyboard.controller.domElement.addEventListener('keydown', function(event){
 		//up
-		if( EO.three.keyboard.eventMatches(event, 'w') || EO.three.keyboard.eventMatches(event, 'up') ) {
-			EO.input.keyboard.up = true;
-		}
+		if ( EO.input.keyboard.controller.eventMatches(event, 'w') || EO.input.keyboard.controller.eventMatches(event, 'up') ) EO.input.keyboard.up = true;
 		//down
-		if( EO.three.keyboard.eventMatches(event, 's') || EO.three.keyboard.eventMatches(event, 'down') ) {
-			EO.input.keyboard.down = true;
-		}
+		if ( EO.input.keyboard.controller.eventMatches(event, 's') || EO.input.keyboard.controller.eventMatches(event, 'down') ) EO.input.keyboard.down = true;
 		//left
-		if( EO.three.keyboard.eventMatches(event, 'a') || EO.three.keyboard.eventMatches(event, 'left') ) {
-			EO.input.keyboard.left = true;
-		}
+		if ( EO.input.keyboard.controller.eventMatches(event, 'a') || EO.input.keyboard.controller.eventMatches(event, 'left') ) EO.input.keyboard.left = true;
 		//right
-		if( EO.three.keyboard.eventMatches(event, 'd') || EO.three.keyboard.eventMatches(event, 'right') ) {
-			EO.input.keyboard.right = true;
-		}
+		if ( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = true;
 	});
-	this.keyboard.domElement.addEventListener('keyup', function(event) {
+	EO.input.keyboard.controller.domElement.addEventListener('keyup', function(event) {
 		//up
-		if( EO.three.keyboard.eventMatches(event, 'w') || EO.three.keyboard.eventMatches(event, 'up') ) {
-			EO.input.keyboard.up = false;
-		}
+		if( EO.input.keyboard.controller.eventMatches(event, 'w') || EO.input.keyboard.controller.eventMatches(event, 'up') ) EO.input.keyboard.up = false;
 		//down
-		if( EO.three.keyboard.eventMatches(event, 's') || EO.three.keyboard.eventMatches(event, 'down') ) {
-			EO.input.keyboard.down = false;
-		}
+		if( EO.input.keyboard.controller.eventMatches(event, 's') || EO.input.keyboard.controller.eventMatches(event, 'down') ) EO.input.keyboard.down = false;
 		//left
-		if( EO.three.keyboard.eventMatches(event, 'a') || EO.three.keyboard.eventMatches(event, 'left') ) {
-			EO.input.keyboard.left = false;
-		}
+		if( EO.input.keyboard.controller.eventMatches(event, 'a') || EO.input.keyboard.controller.eventMatches(event, 'left') ) EO.input.keyboard.left = false;
 		//right
-		if( EO.three.keyboard.eventMatches(event, 'd') || EO.three.keyboard.eventMatches(event, 'right') ) {
-			EO.input.keyboard.right = false;
-		}
+		if( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = false;
 	});
-
-	EO.three.midpoint = new THREE.Vector3(EO.map.width / 2 * 64, EO.map.height / 2 * 64, 1);
-		//EO.three.scene.add(EO.three.midpoint);
-		//EO.three.midpoint.add(EO.three.camera);
-		//EO.three.camera.position.copy(EO.three.midpoint);
-		//lights
-		var ambientLight = new THREE.AmbientLight( 0xcccccc );
-		ambientLight.intensity = .5;
-		EO.three.scene.add( ambientLight );
-		hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
-		hemiLight.color.setHSL( 0.6, 1, 0.6 );
-		hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
-		hemiLight.position.set( 0, 500, 0 );
-		//EO.three.scene.add( hemiLight );
-		//shadow lighting
-		EO.three.dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
-		EO.three.dirLight.color.setHSL( 0.1, 1, 0.95 );
-		EO.three.dirLight.position.set( 1, -1.75, 4 );
-		EO.three.dirLight.position.multiplyScalar( 50 );
-		EO.three.dirLight.castShadow = true;
-
-		EO.three.dirLight.shadow.mapSize.width = 2048;
-		EO.three.dirLight.shadow.mapSize.height = 2048;
-
-		var d = 500;
-
-		EO.three.dirLight.shadow.camera.left = -d;
-		EO.three.dirLight.shadow.camera.right = d;
-		EO.three.dirLight.shadow.camera.top = d;
-		EO.three.dirLight.shadow.camera.bottom = -d;
-
-		EO.three.dirLight.shadow.camera.far = 3500;
-		EO.three.dirLight.shadow.bias = -0.0001;
-		EO.three.dirLight.shadow.camera.visible = true;
-		EO.three.scene.add( EO.three.dirLight );
-		EO.three.renderer.setClearColor( 0xbfd1e5 );
-		EO.three.renderer.setPixelRatio( window.devicePixelRatio );
-	
-
-	var animation;
-	// instantiate a loader
-		var loader = new THREE.ObjectLoader();
-		loader.castShadow = true;
-
-		// load a resource
-		loader.load(
-			// resource URL
-			'js/models/updated_export_8.json',
-			// Function when resource is loaded
-			function ( object ) {
-				//materials[0].shininess = 0;
-				//var material = new THREE.MultiMaterial( materials );
-				//var material = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 20, morphTargets: true, vertexColors: THREE.FaceColors, shading: THREE.FlatShading } );
-				//EO.character.mesh = new THREE.SkinnedMesh( geometry, material );
-				//EO.character.ref = object;
-				EO.character.mesh = object.children[0];
-				EO.character.object = object;
-				EO.character.material = object.children[0].material;
-				EO.character.geometry = object.children[0].geometry;
-
-				//EO.character.mesh.castShadow = true;
-				//EO.character.mesh.receiveShadow = true;
-				//mesh.position.z = 51;
-				//EO.character.mesh.rotateX(135);
-				//EO.character.mesh.material.skinning = true;
-
-				// EO.character.mesh.traverse( function(child) {
-				// 	if ( child instanceof THREE.Mesh ) {
-				//         child.castShadow = true;
-				// 		child.receiveShadow = true;
-				//     }
-				// });
-				//EO.three.scene.add( EO.character.mesh );
-
-				EO.character.helper = new THREE.SkeletonHelper( EO.character.mesh );
-				EO.character.helper.material.linewidth = 1;
-				EO.character.helper.visible = false;
-				//EO.character.helper.rotateX(135);
-				//EO.three.scene.add( EO.character.helper );
-
-				EO.three.mixer = new THREE.AnimationMixer( EO.three.scene );
-				EO.character.action = {}
-				//EO.character.action.stand = new THREE.AnimationAction( geometry.animations[ 0 ] );
-				// EO.character.action.walk  = EO.three.mixer.clipAction( EO.character.mesh.geometry.animations[0] );
-				// EO.character.action.two = EO.three.mixer.clipAction( EO.character.mesh.geometry.animations[1] );
-				// EO.character.action.three = EO.three.mixer.clipAction( EO.character.mesh.geometry.animations[2] );
-				//console.log(EO.character.action.walk);
-				//
-				//
-				//
-		
-				
-				
-			}
-		);
+}
+EO.input.keyboard.update = function() {
+	var input_arr = [EO.input.keyboard.up, EO.input.keyboard.right, EO.input.keyboard.down, EO.input.keyboard.left];
+	socket.emit('input', input_arr);
 }
 
 //	Tiles
@@ -277,8 +218,6 @@ EO.map.draw = function() {
 	EO.three.scene.add(EO.map.mesh);
 }
 
-EO.character = {};
-
 EO.render = function() {
 	
 	var delta = 1.5 * EO.settings.clock.getDelta();
@@ -310,6 +249,7 @@ EO.render = function() {
 
 	EO.three.renderer.render( EO.three.scene, EO.three.camera );
 
+	//export scene to window for three.js inspector
 	window.scene = EO.three.scene;
 
 	requestAnimationFrame( EO.render );
@@ -319,6 +259,8 @@ EO.characters = {};
 EO.characters.group = [];
 EO.characters.add = function (name) {
 	if (EO.character.mesh && typeof EO.three.mixer !== 'undefined') {
+
+		console.log('adding ' + name);
 		
 		EO.characters.count = [];
 		EO.characters.count.push(name);
@@ -326,21 +268,6 @@ EO.characters.add = function (name) {
 		EO.characters.group[name] = {};
 		
 		EO.characters.group[name].mesh = EO.character.mesh.clone(true);
-		var geometry = EO.character.geometry.clone();
-		geometry.bones = EO.character.geometry.bones;
-		geometry.skinWeights = EO.character.geometry.skinWeights;
-		geometry.skinIndices = EO.character.geometry.skinIndices;
-		geometry.animations = EO.character.geometry.animations;
-		geometry.animation = EO.character.geometry.animation;
-		var material = EO.character.material.clone();
-		EO.characters.group[name].mesh = new THREE.SkinnedMesh( geometry , material );
-		
-		//EO.character.action.walk.play();
-		EO.characters.group[name].mesh.material.skinning = true;
-		EO.characters.group[name].mesh.scale.x = 6;
-		EO.characters.group[name].mesh.scale.y = 6;
-		EO.characters.group[name].mesh.scale.z = 6;
-		EO.characters.group[name].mesh.rotation.x = 1.45;
 		EO.characters.group[name].mesh.name = name;
 		
 		EO.three.scene.add(EO.characters.group[name].mesh);
@@ -405,7 +332,9 @@ EO.disconnect = function(data) {
 
 EO.init = function() {
 	EO.three.init();
+	EO.character.init();
 	EO.tiles.init();
 	EO.map.init();
+	EO.input.init();
 	EO.render();
 }
