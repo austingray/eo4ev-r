@@ -72,47 +72,14 @@
 	<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 	<script>
 
-	  var socket = io.connect();
-	  
-	  socket.on('news', function (data) {
-	  	var $output = $('<div></div>').attr({
-	  		"class":"news"
-	  	}).html(data.message);
-	    $('#feed').append($output);
-	    //console.log(data);
-	    //socket.emit('my other event', { my: 'data' });
-	  });
-
-	  socket.on('chat', function (data) {
-	  	var $output = $('<div></div>').attr({
-	  		"class":"chat"
-	  	}).html(data.user + ': ' + data.message);
-	    $('#feed').append($output);
-	  });
-
-	  socket.on('map', function(data) {
-	  	EO.map.array = data;
-	  	EO.init();
-	  });
-
-	  socket.on('update', function(data) {
-	  	EO.update(data);
-	  });
-
-	  socket.on('id', function(data) {
-	  	EO.hero.id = data;
-	  })
-
-	  socket.on('disconnect', function(data) {
-	  	EO.disconnect(data);
-	  })
+	 
 
 	  $(document).ready(function() {
 	  	$('#input input').keydown(function(event) {
 	  		if (event.which === 13) {
 	  			var msg = $(this).val();
 	  			$(this).val('');
-	  			socket.emit('chat', { message: msg });
+	  			EO.server.socket.emit('chat', { message: msg });
 	  		}
 			});
 	  });

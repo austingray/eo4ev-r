@@ -69,17 +69,14 @@ var user_pos = [];
 //socket.io connection handler
 io.on('connection', function (socket) {
 
-	
 	/**
 	 * Add socket.id to user_map
 	 * Add socket.id to user_arr
 	 * Assign Guest alias
 	 */
 	initNewConnection(socket.id);
-  //send map to user
-  io.to(socket.id).emit( 'map', GAME.map.array );
-  //send name to user for naming their mesh
-  io.to(socket.id).emit( 'id', user_arr[socket.id].name );
+  //send connection data to user
+  socket.emit( 'join', { asdf:'asdf'});
   //send MotD
   socket.emit( 'news', { message: 'Welcome to EO!' });
   //announce new user
@@ -99,8 +96,8 @@ io.on('connection', function (socket) {
     updateUserPos(movement);
   });
 
+  //disconnect handler
   socket.on('disconnect', function () {
-  	
   	var index = user_map.indexOf(socket.id);
   	if (index > -1) {
   		var uname = user_arr[socket.id].name;
@@ -110,16 +107,25 @@ io.on('connection', function (socket) {
   		user_map.splice(index, 1);
   		delete user_arr[socket.id];
   	}
-	io.emit('disconnect', {name: uname});
+    io.emit('disconnect', {name: uname});
     console.log(uname + ' has disconnected.');
-
   });
+
 //end io
 });
 
 setInterval(function() {
-	io.emit('update', {pos: user_pos});
+	sendUpdate();
 }, 33);
+
+var sendUpdate = function() {
+  io.emit('update', {pos: user_pos});
+  //get users position
+  //loop through map and send map data inside viewport
+  //loop through users and send back user inside viewport
+  //get all map items inside viewport
+  //
+}
 
 setInterval(function() {
 	//console.log(user_pos);

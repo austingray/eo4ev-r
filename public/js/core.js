@@ -3,7 +3,8 @@ var EO = EO || {};
 //////////////////////////////////////////////////
 // Init called when signal received from server //
 //////////////////////////////////////////////////
-EO.init = function() {
+EO.init = function(id) {
+	EO.user.id = id;
 	EO.three.init();
 	EO.character.init();
 	EO.tiles.init();
@@ -55,6 +56,10 @@ EO.three.init = function() {
 	var far = 1000;
 	EO.three.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
 	EO.three.camera.position.z = 200;
+	EO.three.camera.position.x = 0;
+	EO.three.camera.position.y = 0 - 200;
+	EO.three.camera.lookAt(new THREE.Vector3(0, 0, 0));
+	EO.three.camera.updateProjectionMatrix();
 	
 	//renderer
 	var canvas = document.getElementById("gamecanvas");
@@ -151,7 +156,7 @@ EO.input.keyboard.init = function() {
 }
 EO.input.keyboard.update = function() {
 	var input_arr = [EO.input.keyboard.up, EO.input.keyboard.right, EO.input.keyboard.down, EO.input.keyboard.left];
-	socket.emit('input', input_arr);
+	EO.server.socket.emit('input', input_arr);
 }
 
 ///////////
@@ -185,7 +190,6 @@ EO.tiles.init = function() {
 		//t.needsUpdate = true;
 		//t.image.width = 32;
 		var mesh = new THREE.MeshPhongMaterial({ map: t });
-		console.log(mesh.map['image']);
 		//mesh.map.image.width = 32;
 		//var mesh = new THREE.MeshBasicMaterial({ map: t });
 		mesh.receiveShadow = true;
@@ -233,41 +237,33 @@ EO.map.draw = function() {
 	// 	}
 	// }
 	//console.log(EO.tiles.materials);
-	console.log(EO.map.geometry);
 	EO.map.mesh = new THREE.Mesh(EO.map.geometry, new THREE.MeshFaceMaterial(EO.tiles.materials));
+	EO.map.mesh.receiveShadow = true;
 	EO.three.scene.add(EO.map.mesh);
 }
 
 EO.render = function() {
-		
 	//delta
 	var delta = 1.5 * EO.settings.clock.getDelta();
-
 	//util frame tick
 	var f = Math.floor(Date.now() / 600) % 3;
-	if (f !== EO.util.frame) {
-		EO.util.update();
-	}
+	if (f !== EO.util.frame) EO.util.update();
 	EO.util.frame = f;
-
 	//input updates
 	EO.input.keyboard.update();
-	
 	//animation mixer update
-	if (EO.three.mixer) {
-		EO.three.mixer.update( delta );
-	}
-
+	if (EO.three.mixer) EO.three.mixer.update( delta );
 	//render frame
 	EO.three.renderer.render( EO.three.scene, EO.three.camera );
-
 	//request next frame
 	requestAnimationFrame( EO.render );
-
 	//export scene to window for three.js inspector
 	window.scene = EO.three.scene;
 }
 
+//////////////////////////////////
+// World objects and characters //
+//////////////////////////////////
 EO.characters = {};
 EO.characters.group = [];
 EO.characters.add = function (name) {
@@ -284,23 +280,45 @@ EO.characters.add = function (name) {
 		EO.characters.group[name].mesh.name = name;
 		
 		EO.three.scene.add(EO.characters.group[name].mesh);
-		
-		// EO.characters.group[name].helper = new THREE.SkeletonHelper( EO.characters.group[name].mesh );
-		// EO.characters.group[name].helper.material.linewidth = 1;
-		// EO.characters.group[name].helper.visible = false;
-		// EO.three.scene.add( EO.characters.group[name].helper );
-		
-		//EO.characters.group[name].mixer = new THREE.AnimationMixer( EO.characters.group[name].mesh );
+
 		EO.characters.group[name].action = {}
 		EO.characters.group[name].action.walk = EO.three.mixer.clipAction( EO.characters.group[name].mesh.geometry.animations[0], EO.characters.group[name].mesh );
 
 	}
 }
 
-EO.hero = {};
-EO.hero.walking = false;
+///////////////
+// User data //
+///////////////
+EO.user = {};
+EO.user.walking = false;
 
-EO.update = function(data) {
+////////////////////////
+// Socket.io handlers //
+////////////////////////
+EO.server = {}
+EO.server.socket = io.connect();
+EO.server.socket.on('news', function (data) {
+	var $output = $('<div></div>').attr({
+		"class":"news"
+	}).html(data.message);
+	$('#feed').append($output);
+});
+
+EO.server.socket.on('chat', function (data) {
+	var $output = $('<div></div>').attr({
+		"class":"chat"
+	}).html(data.user + ': ' + data.message);
+	$('#feed').append($output);
+});
+
+EO.server.socket.on('join', function(data) {
+	console.log(data);
+	EO.init();
+});
+
+EO.server.socket.on('update', function(data) {
+
 	var charData = data.pos;
 	for (var i = 0; i < charData.length; i++) {
 		var exists = false;
@@ -318,11 +336,8 @@ EO.update = function(data) {
 						EO.characters.group[object.name].action.walk.stop();
 					}
 
-					if (object.name === EO.hero.id) {
-						EO.three.camera.position.x = object.position.x;
-						EO.three.camera.position.y = object.position.y -200;
-						EO.three.camera.lookAt(object.position);
-						EO.three.camera.updateProjectionMatrix();
+					if (object.name === EO.user.id) {
+						
 					}
 				}
 			});
@@ -331,17 +346,13 @@ EO.update = function(data) {
 			}
 		}
 	}
-}
+});
 
-////////////////////////
-// Socket.io handlers //
-////////////////////////
-EO.socket = {}
-EO.socket.disconnect = function(data) {
+EO.server.socket.on('disconnect', function(data) {
 	var user = data.name;
 	EO.three.scene.traverse( function (object) {
 		if (object.name === user) {
 			EO.three.scene.remove(object);
 		}
 	});
-}
+});
