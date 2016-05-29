@@ -65,6 +65,8 @@ var user_arr = [];
  * @type {Array}
  */
 var user_pos = [];
+//
+var users = {};
 
 //socket.io connection handler
 io.on('connection', function (socket) {
@@ -75,8 +77,7 @@ io.on('connection', function (socket) {
 	 * Assign Guest alias
 	 */
 	initNewConnection(socket.id);
-  //send connection data to user
-  socket.emit( 'join', { asdf:'asdf'});
+  socket.emit('join');
   //send MotD
   socket.emit( 'news', { message: 'Welcome to EO!' });
   //announce new user
@@ -90,7 +91,6 @@ io.on('connection', function (socket) {
   socket.on('input', function (data) {
     //calculate movements
     var movement = calculateMovement(data);
-    //add socket_id to movement object
     movement.socket_id = socket.id;
     //update user position in global array
     updateUserPos(movement);
@@ -111,15 +111,17 @@ io.on('connection', function (socket) {
     console.log(uname + ' has disconnected.');
   });
 
+  setInterval(function() {
+    sendUpdate(socket.id);
+  }, 33);
+
 //end io
 });
 
-setInterval(function() {
-	sendUpdate();
-}, 33);
-
-var sendUpdate = function() {
-  io.emit('update', {pos: user_pos});
+var sendUpdate = function(socket_id) {
+  
+  var localView = translateLocalView(socket_id);
+  io.emit('update', {localView: localView});
   //get users position
   //loop through map and send map data inside viewport
   //loop through users and send back user inside viewport
@@ -127,9 +129,60 @@ var sendUpdate = function() {
   //
 }
 
-setInterval(function() {
-	//console.log(user_pos);
-}, 5000);
+var translateLocalView = function(socket_id) {
+
+  var user = users[socket_id];
+  var localArray = {};
+  if (typeof user.view != 'undefined') {
+    localArray.offset = user.view.pos;
+  } else {
+    localArray.offset = {x:0, y:0, z:0};
+  }
+  localArray.users = [];
+  
+  for (var i = 0; i < user_map.length; i++) {
+    var add_user_to_local_view = false;
+    var check_this_user = users[user_map[i]];
+    if (check_this_user.name === user.name) {
+      if (user.view) {
+        check_this_user = goclone(user);
+        check_this_user.view.pos = {x:0, y:0, z:0};
+      }
+      add_user_to_local_view = true;
+    };
+    if (check_this_user.view && check_this_user.view.pos.x - user.view.pos.x < 500 && check_this_user.view.pos.y - user.view.pos.y < 500) {
+      add_user_to_local_view = true;
+    }
+    if (add_user_to_local_view === true) {
+      localArray.users.push(check_this_user);
+    }
+  }
+
+  localArray.map = GAME.map.array;
+
+  return localArray;
+
+}
+
+var goclone = function (source) {
+    if (Object.prototype.toString.call(source) === '[object Array]') {
+        var clone = [];
+        for (var i=0; i<source.length; i++) {
+            clone[i] = goclone(source[i]);
+        }
+        return clone;
+    } else if (typeof(source)=="object") {
+        var clone = {};
+        for (var prop in source) {
+            if (source.hasOwnProperty(prop)) {
+                clone[prop] = goclone(source[prop]);
+            }
+        }
+        return clone;
+    } else {
+        return source;
+    }
+}
 
 /**
  * Invoked whenever a user connects to the server
@@ -137,10 +190,13 @@ setInterval(function() {
  * @return {void}
  */
 var initNewConnection = function(socket_id) {
+  var user = {};
+  user.name = 'Guest'+Math.floor(Math.random() * 100000);
 	user_map.push(socket_id);
 	user_arr[socket_id] = {};
-	user_arr[socket_id].name = 'Guest'+Math.floor(Math.random() * 100000);
+	user_arr[socket_id].name = user.name;
 	console.log(user_arr[socket_id].name + ' has connected');
+  users[socket_id] = user;
   return;
 }
 
@@ -220,38 +276,33 @@ function updateUserPos(movement) {
   var walking = movement.walking;
   var pos = movement.pos;
   var socket_id = movement.socket_id;
-  
-  for (var i = 0; i < user_map.length; i++) {
-    if (socket_id === user_map[i]) {
-        
-      var name = user_arr[socket_id].name;
-      if (typeof user_pos[i] != 'undefined') {
-        var old_pos = user_pos[i].pos;
-      }
-      
-      if (typeof cRot === 'undefined') {
-        if (typeof user_pos[i] === 'undefined') {
-          cRot = 0;
-        } else {
-          cRot = user_pos[i].rot;
-        }
-      }
-      
-      var new_pos = {
-        x: old_pos.x + pos.x,
-        y: old_pos.y + pos.y,
-        z: old_pos.z + pos.z
-      };
 
-      user_pos[i] = {
-        name: name,
-        walking: walking,
-        rot: cRot,
-        pos: new_pos
-      };
+  var old_view = users[socket_id].view;
 
+  if (typeof old_view != 'undefined') {
+    old_pos = old_view.pos;
+  }
+  if (typeof cRot === 'undefined') {
+    if (typeof old_view === 'undefined') {
+      cRot = 0;
+    } else {
+      cRot = old_view.rot;
     }
   }
+
+  var new_pos = {
+    x: old_pos.x + pos.x,
+    y: old_pos.y + pos.y,
+    z: old_pos.z + pos.z
+  };
+
+  view = {
+    walking: walking,
+    rot: cRot,
+    pos: new_pos
+  };
+
+  users[socket_id].view = view;
 
   return;
 }

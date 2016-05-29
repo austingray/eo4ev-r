@@ -3,8 +3,7 @@ var EO = EO || {};
 //////////////////////////////////////////////////
 // Init called when signal received from server //
 //////////////////////////////////////////////////
-EO.init = function(id) {
-	EO.user.id = id;
+EO.init = function() {
 	EO.three.init();
 	EO.character.init();
 	EO.tiles.init();
@@ -287,12 +286,6 @@ EO.characters.add = function (name) {
 	}
 }
 
-///////////////
-// User data //
-///////////////
-EO.user = {};
-EO.user.walking = false;
-
 ////////////////////////
 // Socket.io handlers //
 ////////////////////////
@@ -313,13 +306,12 @@ EO.server.socket.on('chat', function (data) {
 });
 
 EO.server.socket.on('join', function(data) {
-	console.log(data);
 	EO.init();
 });
 
 EO.server.socket.on('update', function(data) {
-
-	var charData = data.pos;
+	//console.log(data);
+	var charData = data.localView.users;
 	for (var i = 0; i < charData.length; i++) {
 		var exists = false;
 		if (charData[i] != null && charData[i].name) {
@@ -327,17 +319,13 @@ EO.server.socket.on('update', function(data) {
 				if (object.name === charData[i].name) {
 					//console.log(charData[i].name);
 					exists = true;
-					var pos = charData[i].pos;
+					var pos = charData[i].view.pos;
 					object.position.set(pos.x, pos.y, pos.z);
-					object.rotation.y = charData[i].rot;
-					if (charData[i].walking) {
+					object.rotation.y = charData[i].view.rot;
+					if (charData[i].view.walking) {
 						EO.characters.group[object.name].action.walk.play();
 					} else {
 						EO.characters.group[object.name].action.walk.stop();
-					}
-
-					if (object.name === EO.user.id) {
-						
 					}
 				}
 			});
@@ -346,6 +334,10 @@ EO.server.socket.on('update', function(data) {
 			}
 		}
 	}
+	if (EO.map && data.localView.offset){
+		EO.map.mesh.position.set(-(data.localView.offset.x), -(data.localView.offset.y), -(data.localView.offset.z));
+	}
+	
 });
 
 EO.server.socket.on('disconnect', function(data) {
