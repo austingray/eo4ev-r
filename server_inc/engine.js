@@ -215,13 +215,12 @@ module.exports = function(io) {
   //socket.io connection handler
   io.on('connection', function (socket) {
 
-    /**
-     * Add socket.id to user_map
-     * Add socket.id to user_arr
-     * Assign Guest alias
-     */
+    //init connection
     initNewConnection(socket.id);
+    //emit 'join' tells client to EO.init();
     socket.emit('join');
+    //join unique channel
+    socket.join(users[socket.id].name);
     //send MotD
     socket.emit( 'news', { message: 'Welcome to EO!' });
     //announce new user
@@ -254,7 +253,7 @@ module.exports = function(io) {
 
     setInterval(function() {
       var localView = translateLocalView(socket.id);
-      io.emit('update', {localView: localView});
+      io.sockets.in(users[socket.id].name).emit('update', {localView: localView});
     }, 33);
 
   //end io
