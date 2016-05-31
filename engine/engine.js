@@ -16,6 +16,9 @@ var users = {};
 var translateLocalView = function(socket_id) {
 
   var user = users[socket_id];
+  if (typeof user == 'undefined') {
+    return false;
+  }
   var localArray = {};
   if (typeof user.view != 'undefined') {
     localArray.offset = user.view.pos;
@@ -30,11 +33,11 @@ var translateLocalView = function(socket_id) {
     if (check_this_user.name === user.name) {
       if (user.view) {
         check_this_user = clone_object(user);
-        check_this_user.view.pos = {x:0, y:0, z:0};
+        //check_this_user.view.pos = {x:0, y:0, z:0};
       }
       add_user_to_local_view = true;
     };
-    if (typeof check_this_user.view !== 'undefined' && typeof user.view !== 'undefined' && check_this_user.view.pos.x - user.view.pos.x < 500 && check_this_user.view.pos.y - user.view.pos.y < 500) {
+    if (typeof check_this_user.view !== 'undefined' && typeof user.view !== 'undefined' && check_this_user.view.pos.x - user.view.pos.x < 100 && check_this_user.view.pos.y - user.view.pos.y < 100) {
       add_user_to_local_view = true;
     }
     if (add_user_to_local_view === true) {
@@ -42,10 +45,36 @@ var translateLocalView = function(socket_id) {
     }
   }
 
-  localArray.map = GAME.map.array;
-
   return localArray;
 
+}
+
+var sendMapChunk = function(socket_id) {
+
+  var user = users[socket_id];
+  if (typeof user == 'undefined') {
+    return false;
+  }
+
+  var mapOffset = {x:0, y:0, z:0};
+  if (typeof user.view != 'undefined') {
+    var mapOffset = user.view.pos;
+  }
+
+  var currentTile = {
+    x: Math.floor((GAME.map.width / 2) + (localArray.offset.x / 64)),
+    y: Math.floor((GAME.map.height / 2) + (localArray.offset.y / 64))
+  };
+  var map = [];
+  for (var i = currentTile.x - 10; i < currentTile.x + 11; i++) {
+    map[i] = [];
+    for (var j = currentTile.y - 10; j < currentTile.y + 11; j++) {
+      map[i][j] = GAME.map.array[i][j];
+    }
+  }
+
+  return map;
+  
 }
 
 
@@ -174,8 +203,8 @@ function updateUserPos(movement) {
 var GAME = {};
 GAME.map = {};
 GAME.map.init = function() {
-  this.width = 16;
-  this.height = 16;
+  this.width = 1000;
+  this.height = 1000;
   this.tile.init();
   this.generate();
   //this.draw();
@@ -253,7 +282,9 @@ module.exports = function(io) {
 
     setInterval(function() {
       var localView = translateLocalView(socket.id);
-      io.sockets.in(users[socket.id].name).emit('update', {localView: localView});
+      if (typeof users[socket.id] !== 'undefined') {
+        io.sockets.in(users[socket.id].name).emit('update', {localView: localView});
+      }
     }, 33);
 
   //end io

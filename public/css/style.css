@@ -1,0 +1,57 @@
+#container {
+      position:relative;
+      display:block;
+      margin:auto;
+      width:1200px;
+      height:600px;
+      border:1px solid silver;
+    }
+    #gamecanvas {
+      margin:auto;
+      display:block;
+      cursor:none;
+      width:800px;
+      height:600px;
+      background:#ccc;
+      position:absolute;
+      left:0;
+      top:0;
+    }
+    #status {
+      position:absolute;
+      width:400px;
+      height:600px;
+      right:0;
+      top:0;
+      background:#000;
+    }
+    #feed {
+      position:absolute;
+      top:0;
+      left:0;
+      width:400px;
+      height:560px;
+      overflow-y:scroll;
+      color:#fff;
+      padding:9px;
+    }
+    #feed div {
+      word-wrap: break-word;
+    }
+    #input {
+      position:absolute;
+      width:400px;
+      height:40px;
+      bottom:0;
+      background:#fff;
+    }
+    #input input {
+      width:100%;
+      -webkit-box-sizing:border-box;
+      -moz-box-sizing:border-box;
+      box-sizing:border-box;
+      border:0;
+      font-size:16px;
+      padding:9px;
+      outline:none;
+    }

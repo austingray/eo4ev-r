@@ -41,6 +41,19 @@ EO.util.update = function() {
 // Three.js Core //
 ///////////////////
 EO.three = {};
+//objects marked for deletion
+EO.three.dumpster = [];
+// EO.three.cleanUp = setInterval(function() {
+// 	while (EO.three.dumpster.length > 0) {
+// 		var remove_object = EO.three.dumpster.pop();
+// 		console.log('cleaning up: ' + remove_object);
+// 		EO.three.scene.traverse( function (object) {
+// 			if (object.name === remove_object) {
+// 				EO.three.scene.remove(object);
+// 			}
+// 		});
+// 	}
+// }, 100);
 EO.three.init = function() {
 	
 	//scene
@@ -89,9 +102,78 @@ EO.three.init = function() {
 	EO.three.scene.add( EO.three.dirLight );
 	
 	EO.three.renderer.setClearColor( 0xbfd1e5 );
-	EO.three.renderer.setPixelRatio( window.devicePixelRatio );
-	
+	EO.three.renderer.setPixelRatio( window.devicePixelRatio );	
 }
+
+EO.three.update = function() {
+	//localView data
+	if (typeof EO.server.data === 'undefined' || typeof EO.three.scene === 'undefined') {
+		console.log('server data is undefined');
+		return false;
+	}
+	var localView = EO.server.data.localView;
+	//users
+	var tmpCharArr = [];
+	var existCharArr = [];
+	var deleteCharArr = [];
+	//add new items
+	for (var k = 0; k < localView.users.length; k++) {
+		tmpCharArr.push(localView.users[k].name);
+		if (typeof EO.characters.group[localView.users[k].name] === 'undefined') {
+			EO.characters.add(localView.users[k].name);
+		}
+	}
+	//traverse the scene
+	EO.three.scene.traverse( function (object) {
+		//loop through localView users
+		for (var i = 0; i < localView.users.length; i++) {
+			var user = localView.users[i];
+			//if user is current object
+			if (user.name === object.name) {
+				existCharArr.push(user.name);
+				object.position.set( user.view.pos.x - localView.offset.x, user.view.pos.y - localView.offset.y, user.view.pos.z );
+				object.rotation.y = user.view.rot;
+				if (user.view.walking) {
+					EO.characters.group[object.name].action.walk.play();
+				} else {
+					EO.characters.group[object.name].action.walk.stop();
+				}
+			}
+		}
+		//loop through delete characters
+		for (var j = 0; j < EO.three.dumpster.length; j++) {
+			var delete_object = EO.three.dumpster[j];
+			if (object.name === delete_object) {
+				deleteCharArr.push(object);
+			}
+		}
+	});
+	//perform delete after traverse
+	while (deleteCharArr.length > 0) {
+		var delete_object = deleteCharArr.pop();
+		EO.three.scene.remove(delete_object);
+	}
+	//empty dumpster before starting the dumpster reference cycle, which stats here
+	EO.three.dumpster = [];
+	//add objects without a server reference to the dumpster
+	var removeIndexArr = [];
+	for (var i = 0; i < EO.characters.map.length; i++) {
+		if (tmpCharArr.indexOf(EO.characters.map[i]) < 0) {
+			//console.log('adding '+ EO.characters.map[i] + ' to garbage');
+			EO.three.dumpster.push(EO.characters.map[i]);
+			delete EO.characters.group[EO.characters.map[i]];
+			var index = EO.characters.map.indexOf(EO.characters.map[i]);
+			removeIndexArr.push(index);
+		}
+	}
+	for (var l = 0; l < removeIndexArr.length; l++) {
+		EO.characters.map.splice(removeIndexArr[l], 1);
+	}
+	if (EO.map) {
+		EO.map.mesh.position.set(-(localView.offset.x), -(localView.offset.y), -(localView.offset.z));
+		//EO.map.update();
+	}
+};
 
 //////////////////////////
 // Load character model //
@@ -178,10 +260,10 @@ EO.tiles.init = function() {
 		var tLoader = new THREE.TextureLoader();
 		var t = tLoader.load( texture.file );
 		
-		t.repeat.set(20 , 20);
+		t.repeat.set(EO.map.tilesPer , EO.map.tilesPer);
 		if (texture.animated) {
 			t.wrapS = t.wrapT = THREE.RepeatWrapping;//THREE.RepeatWrapping;
-			t.repeat.set( 20, 20 );
+			t.repeat.set( EO.map.tilesPer, EO.map.tilesPer );
 
 		} else {
 			t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -202,7 +284,10 @@ EO.tiles.init = function() {
 // Map //
 /////////
 EO.map = {};
-EO.map.geometry = new THREE.PlaneGeometry(1280, 1280, 20, 20);
+EO.map.width = 1280;
+EO.map.height = 1280;
+EO.map.tilesPer = 20;
+EO.map.geometry = new THREE.PlaneGeometry(EO.map.width, EO.map.height, EO.map.tilesPer, EO.map.tilesPer);
 var l = EO.map.geometry.faces.length / 2;
 for (var i=0; i < l; i++) {
 	var j  = 2 * i;
@@ -215,33 +300,46 @@ EO.map.geometry.sortFacesByMaterialIndex();
 EO.map.init = function() {
 	this.width = 14;
 	this.height = 14;
-	this.offsetX = this.width / 2;
-	this.offsetY = this.height / 2;
 	EO.map.draw();
 }
+EO.map.chunk = function() {
+	
+}
 EO.map.draw = function() {
-	// for (i=0; i<this.array.length; i++) {
-	// 	for (var j=0; j<this.array[i].length; j++) {
-	// 		// var startX = i * 64;
-	// 		// var startY = j * 64;
-	// 		// var geometry = new THREE.CubeGeometry( 64, 64, 1 );
-	// 		// var material = EO.tiles.type[this.array[i][j].material][0];
-	// 		// var mesh = new THREE.Mesh( geometry, material );
-			
-
-	// 		mesh.position.set( startX - this.offsetX * 64, startY - this.offsetY * 64, 0 )
-	// 		mesh.castShadow = true;
-	// 		mesh.receiveShadow = true;
-	// 		EO.three.scene.add( mesh );
-	// 	}
-	// }
-	//console.log(EO.tiles.materials);
 	EO.map.mesh = new THREE.Mesh(EO.map.geometry, new THREE.MeshFaceMaterial(EO.tiles.materials));
 	EO.map.mesh.receiveShadow = true;
 	EO.three.scene.add(EO.map.mesh);
 }
+EO.map.update = function() {
+
+	var serverMapToFace = [];
+
+	var localView = EO.server.data.localView;
+	if (typeof localView === 'undefined') {
+		return false;
+	}
+	for (var i = 0; i < localView.map.length; i++) {
+		for (var j = 0; j < localView.map[i].length; j++) {
+			var tile = localView.map[i][j];
+			serverMapToFace.push(tile);
+		}
+	}
+
+	var l = EO.map.geometry.faces.length / 2;
+	for (var i=0; i < l; i++) {
+		var j  = 2 * i;
+		var tileVal = 1;
+		if (serverMapToFace[i].material === "water") var tileVal = 0;
+		if (serverMapToFace[i].material === "grass") var tileVal = 1;
+		EO.map.geometry.faces[j].materialIndex = tileVal;
+		EO.map.geometry.faces[j+1].materialIndex = tileVal;
+	}
+
+}
 
 EO.render = function() {
+	//update view
+	EO.three.update();
 	//delta
 	var delta = 1.5 * EO.settings.clock.getDelta();
 	//util frame tick
@@ -265,13 +363,13 @@ EO.render = function() {
 //////////////////////////////////
 EO.characters = {};
 EO.characters.group = [];
+EO.characters.map = [];
 EO.characters.add = function (name) {
 	if (EO.character.mesh && typeof EO.three.mixer !== 'undefined') {
 
-		console.log('adding ' + name);
+		//console.log('adding ' + name);
 		
-		EO.characters.count = [];
-		EO.characters.count.push(name);
+		EO.characters.map.push(name);
 		
 		EO.characters.group[name] = {};
 		
@@ -310,41 +408,10 @@ EO.server.socket.on('join', function(data) {
 });
 
 EO.server.socket.on('update', function(data) {
-	//console.log(data);
-	var charData = data.localView.users;
-	for (var i = 0; i < charData.length; i++) {
-		var exists = false;
-		if (charData[i] != null && charData[i].name) {
-			EO.three.scene.traverse( function (object) {
-				if (object.name === charData[i].name) {
-					//console.log(charData[i].name);
-					exists = true;
-					var pos = charData[i].view.pos;
-					object.position.set(pos.x, pos.y, pos.z);
-					object.rotation.y = charData[i].view.rot;
-					if (charData[i].view.walking) {
-						EO.characters.group[object.name].action.walk.play();
-					} else {
-						EO.characters.group[object.name].action.walk.stop();
-					}
-				}
-			});
-			if ( typeof EO.characters.group[charData[i].name] === 'undefined' ) {
-				EO.characters.add(charData[i].name);
-			}
-		}
-	}
-	if (EO.map && data.localView.offset){
-		EO.map.mesh.position.set(-(data.localView.offset.x), -(data.localView.offset.y), -(data.localView.offset.z));
-	}
-	
+	EO.server.data = data;
 });
 
 EO.server.socket.on('disconnect', function(data) {
 	var user = data.name;
-	EO.three.scene.traverse( function (object) {
-		if (object.name === user) {
-			EO.three.scene.remove(object);
-		}
-	});
+	EO.three.dumpster.push(user);
 });

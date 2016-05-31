@@ -16,6 +16,9 @@ var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var pug = require('pug');
 
+//routes
+var routes = require('./routes/index');
+
 //environemt variables
 process.env.TZ = 'UTC';
 if (app.get('env') === 'development') {
@@ -36,12 +39,30 @@ app.use(require('express-session')({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-server.listen(8081);
+app.use('/', routes);
 
-//routes
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/public/index.html');
+// error handlers
+
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+  app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+      message: err.message,
+      error: err
+    });
+  });
+}
+
+// production error handler
+// no stacktraces leaked to user
+app.use(function(err, req, res, next) {
+  res.status(err.status || 500);
+  res.render('error', {
+    message: err.message,
+    error: {}
+  });
 });
 
-//server logic
-var engine = require('./server_inc/engine')(io);
+module.exports = app;
