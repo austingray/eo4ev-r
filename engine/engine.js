@@ -1,17 +1,12 @@
 //utils
 //eventually we will replace this method with manually constructing the cloned object, eg:
-//var clonedObject = {
-//  knownProp: obj.knownProp,
-//  ...
-//}
-//via http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-an-object/5344074#5344074
+//var clonedObject = { knownProp: obj.knownProp, ... } //via http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-an-object/5344074#5344074
 //current implementation via http://stackoverflow.com/questions/12690107/clone-object-without-reference-javascript
 var clone_object = require('./util/clone_object');
 
 //let's phase out the old arrays with users object
 var user_map = [];
 var users = {};
-
 
 var translateLocalView = function(socket_id) {
 
@@ -25,7 +20,7 @@ var translateLocalView = function(socket_id) {
   } else {
     localArray.offset = {x:0, y:0, z:0};
   }
-  localArray.users = [];
+  localArray.objects = [];
   
   for (var i = 0; i < user_map.length; i++) {
     var add_user_to_local_view = false;
@@ -41,7 +36,7 @@ var translateLocalView = function(socket_id) {
       add_user_to_local_view = true;
     }
     if (add_user_to_local_view === true) {
-      localArray.users.push(check_this_user);
+      localArray.objects.push(check_this_user);
     }
   }
 

@@ -47,7 +47,8 @@ var EO = EO || {};
 //////////////////////////////////////////////////
 EO.init = function() {
 	EO.three.init();
-	EO.character.init();
+	EO.models.init();
+	//EO.character.init();
 	EO.tiles.init();
 	EO.map.init();
 	EO.input.init();
@@ -81,72 +82,42 @@ EO.render = function() {
 /////////////////////////////
 // dat update function doe //
 /////////////////////////////
+///	this is an important function
+///	this is called in the main render loop
+///	this takes the data passed from the server and interacts with the three.scene
+///	first we determine if the data is defined, if it is we continue
+///	we loop through the server data's collection of users, select a model, and push it to the world data with its server defined name if it does not exist
+///	then we traverse the scene
+///		for each scene object, if it is not a whitelisted three.js object, and it does not exist in the list of server objects, we EO.world.deleteObject
+///		if the object is present in our server data, we update it to represent the server's state of that object
+///	we then process the server's map data
 EO.update = function() {
-	//localView data
-	if (typeof EO.server.data === 'undefined' || typeof EO.three.scene === 'undefined') {
-		console.log('server data is undefined');
-		return false;
-	}
-	var localView = EO.server.data.localView;
-	//users
-	var tmpCharArr = [];
-	var existCharArr = [];
-	var deleteCharArr = [];
+	//if not ready, bail
+	if (typeof EO.server.data === 'undefined') return false;
 	//add new items
-	for (var k = 0; k < localView.users.length; k++) {
-		tmpCharArr.push(localView.users[k].name);
-		if (typeof EO.characters.group[localView.users[k].name] === 'undefined') {
-			EO.characters.add(localView.users[k].name);
+	for (var k = 0; k < EO.server.data.localView.objects.length; k++) {
+		if ( ! EO.world.isActiveObject( EO.server.data.localView.objects[k].name) ) {
+			EO.models.addToWorld( 'hero', EO.server.data.localView.objects[k].name );
 		}
 	}
 	//traverse the scene
+	var deleteAfterTraverse = [];
 	EO.three.scene.traverse( function (object) {
-		//loop through localView users
-		for (var i = 0; i < localView.users.length; i++) {
-			var user = localView.users[i];
-			//if user is current object
-			if (user.name === object.name) {
-				existCharArr.push(user.name);
-				object.position.set( user.view.pos.x - localView.offset.x, user.view.pos.y - localView.offset.y, user.view.pos.z );
-				object.rotation.y = user.view.rot;
-				if (user.view.walking) {
-					EO.characters.group[object.name].action.walk.play();
-				} else {
-					EO.characters.group[object.name].action.walk.stop();
-				}
-			}
-		}
-		//loop through delete characters
-		for (var j = 0; j < EO.three.dumpster.length; j++) {
-			var delete_object = EO.three.dumpster[j];
-			if (object.name === delete_object) {
-				deleteCharArr.push(object);
+		if ( EO.server.isServerObject(object) ) {
+			EO.world.updateObject(object);
+		} else {
+			if ( ! EO.three.isWhitelistedObject(object.type) ) {
+				deleteAfterTraverse.push(object);
 			}
 		}
 	});
-	//perform delete after traverse
-	while (deleteCharArr.length > 0) {
-		var delete_object = deleteCharArr.pop();
-		EO.three.scene.remove(delete_object);
-	}
-	//empty dumpster before starting the dumpster reference cycle, which stats here
-	EO.three.dumpster = [];
-	//add objects without a server reference to the dumpster
-	var removeIndexArr = [];
-	for (var i = 0; i < EO.characters.map.length; i++) {
-		if (tmpCharArr.indexOf(EO.characters.map[i]) < 0) {
-			//console.log('adding '+ EO.characters.map[i] + ' to garbage');
-			EO.three.dumpster.push(EO.characters.map[i]);
-			delete EO.characters.group[EO.characters.map[i]];
-			var index = EO.characters.map.indexOf(EO.characters.map[i]);
-			removeIndexArr.push(index);
-		}
-	}
-	for (var l = 0; l < removeIndexArr.length; l++) {
-		EO.characters.map.splice(removeIndexArr[l], 1);
+	//can't delete during ra
+	while (deleteAfterTraverse.length > 0) {
+		var object = deleteAfterTraverse.pop();
+		EO.world.deleteObject(object);
 	}
 	if (EO.map) {
-		EO.map.mesh.position.set(-(localView.offset.x), -(localView.offset.y), -(localView.offset.z));
+		//EO.map.mesh.position.set(-(localView.offset.x), -(localView.offset.y), -(localView.offset.z));
 		//EO.map.update();
 	}
 };
@@ -237,27 +208,100 @@ EO.three.init = function() {
 	
 	EO.three.renderer.setClearColor( 0xbfd1e5 );
 	EO.three.renderer.setPixelRatio( window.devicePixelRatio );	
+
+	//animation mixer
+	EO.three.mixer = new THREE.AnimationMixer( EO.three.scene );
+}
+EO.three.whitelist = ["Scene", "AmbientLight", "DirectionalLight", "Mesh", "Bone"]
+EO.three.isWhitelistedObject = function(object_type) {
+	var isWhitelistedObject = false;
+	for (var i = 0; i < EO.three.whitelist.length; i++) {
+		if (object_type === EO.three.whitelist[i]) {
+			isWhitelistedObject = true;
+			break;
+		}
+	}
+	return isWhitelistedObject;
 }
 
-//////////////////////////
-// Load character model //
-//////////////////////////
-EO.character = {};
-EO.character.init = function() {
-	//create loader
+////////////////////////
+// Dat World data doe //
+////////////////////////
+///	interfaces the server data and the three data
+EO.world = {};
+EO.world.objects = {};
+EO.world.objects.active = {};
+EO.world.createObject = function(object) {
+	this.objects.active[object.mesh.name] = object;
+	EO.three.scene.add( this.objects.active[object.mesh.name].mesh );
+}
+EO.world.deleteObject = function(object) {
+
+	EO.three.scene.remove(object);
+
+	if (typeof EO.world.objects.active[object.name] !== 'undefined')
+		delete EO.world.objects.active[object.name]
+
+}
+EO.world.isActiveObject = function(name) {
+	if (typeof this.objects.active[name] !== 'undefined') return true;
+	return false;
+}
+EO.world.updateObject = function(object) {
+	serverObjects = EO.server.data.localView.objects;
+	for (var i = 0; i < serverObjects.length; i++) {
+		if (serverObjects[i].name === object.name) {
+			var objectData = serverObjects[i];
+			break;
+		}
+	}
+	if (typeof objectData !== 'undefined') {
+		object.position.set( objectData.view.pos.x, objectData.view.pos.y, objectData.view.pos.z );
+		object.rotation.y = objectData.view.rot;
+		if (objectData.view.walking) {
+			EO.world.objects.active[objectData.name].animations.walk.play();
+		} else {
+			EO.world.objects.active[objectData.name].animations.walk.stop();
+		}
+	}
+}
+
+////////////////////////////////
+// Dat main model handler doe //
+////////////////////////////////
+///	stores all model data, holds original mesh objects to clone as needed
+EO.models = {}
+EO.models.library = {};
+EO.models.dir = 'js/models/';
+EO.models.predefined = [
+	{ file: EO.models.dir + 'updated_export_8.json', id: 'hero', scale: 6, rotation_x: 1.45 }
+];
+EO.models.init = function() {
 	var loader = new THREE.ObjectLoader();
-	loader.castShadow = true;
-	// load our main model
-	loader.load( 'js/models/updated_export_8.json', function ( object ) {
-		EO.character.mesh = object.children[0];
-		EO.character.mesh.material.skinning = true;
-		EO.character.mesh.scale.x = 6;
-		EO.character.mesh.scale.y = 6;
-		EO.character.mesh.scale.z = 6;
-		EO.character.mesh.rotation.x = 1.45;
-		//instantiate mixer
-		EO.three.mixer = new THREE.AnimationMixer( EO.three.scene );
-	});
+	for (var i = 0; i < EO.models.predefined.length; i++) {
+		var predefined = EO.models.predefined[i];
+		loader.load( predefined.file, function(object) {
+			var model = object.children[0];
+			model.material.skinning = true;
+			model.scale.x = predefined.scale;
+			model.scale.y = predefined.scale;
+			model.scale.z = predefined.scale;
+			model.rotation.x = predefined.rotation_x;
+			EO.models.library[predefined.id] = model;
+		});
+	}
+}
+EO.models.addToWorld = function(model_id, name) {
+
+	if (typeof EO.models.library[model_id] === 'undefined') return;
+
+	var model = {};
+	model.mesh = EO.models.library[model_id].clone(true);
+	model.mesh.name = name;
+	model.animations = {};
+	model.animations.walk = EO.three.mixer.clipAction( model.mesh.geometry.animations[0], model.mesh );
+	EO.world.createObject(model);
+
 }
 
 /////////////
@@ -307,6 +351,7 @@ EO.input.keyboard.update = function() {
 ///////////
 // Tiles //
 ///////////
+///	stores all map tile data, we'll access this from the map, maybe we nest this under map? i dunno yet
 EO.tiles = {};
 EO.tiles.textures = [
 	{ type:'grass', name: 'Grass 1', file:'img/tiles/grass/grass1.png', animated: false },
@@ -401,32 +446,6 @@ EO.map.update = function() {
 
 }
 
-//////////////////////////////////
-// World objects and characters //
-//////////////////////////////////
-EO.characters = {};
-EO.characters.group = [];
-EO.characters.map = [];
-EO.characters.add = function (name) {
-	if (EO.character.mesh && typeof EO.three.mixer !== 'undefined') {
-
-		//console.log('adding ' + name);
-		
-		EO.characters.map.push(name);
-		
-		EO.characters.group[name] = {};
-		
-		EO.characters.group[name].mesh = EO.character.mesh.clone(true);
-		EO.characters.group[name].mesh.name = name;
-		
-		EO.three.scene.add(EO.characters.group[name].mesh);
-
-		EO.characters.group[name].action = {}
-		EO.characters.group[name].action.walk = EO.three.mixer.clipAction( EO.characters.group[name].mesh.geometry.animations[0], EO.characters.group[name].mesh );
-
-	}
-}
-
 ////////////////////////
 // Socket.io handlers //
 ////////////////////////
@@ -458,3 +477,15 @@ EO.server.socket.on('disconnect', function(data) {
 	var user = data.name;
 	EO.three.dumpster.push(user);
 });
+
+EO.server.isServerObject = function(object) {
+	var objects = EO.server.data.localView.objects;
+	var isServerObject = false;
+	for (var i = 0; i < objects.length; i++) {
+		if (objects[i].name === object.name) {
+			isServerObject = true;
+			break;
+		}
+	}
+	return isServerObject;
+}
