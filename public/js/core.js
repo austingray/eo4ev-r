@@ -1,3 +1,47 @@
+/**
+	*	
+	* 	EO.init()  *** called when socket server establishes connection
+	* 	EO.render()  *** called like, 60 times a second, the main loop
+	*
+	* 	EO.settings  *** stores global variables
+	*  	
+	* 	EO.util  *** stores frame settings for animated tiles (remove or merge with settings)
+	* 		.update()  *** updates current frame
+	*
+	* 	EO.three  *** stores all three.js core -scene, camera, renderer, lights
+	* 		.init()  *** inits all those core three stuffz
+	* 		.update()  *** updates all the core stuff in the render cycle based on data sent down from the server, this is a crucial function and we should probably split it out to its own thing
+	* 		
+	*
+	* 	EO.character  *** stores all three.js data about my character object, used as a clone for all characters, probably should be made to include other objects
+	* 		.init()  *** loads the initial model
+	*
+	* 	EO.input  *** stores all input activity
+	* 		EO.input.keyboard  *** handles all keyboard inputs, using THREEx.KeyboardState
+	* 			.init()
+	* 			.update()
+	*
+	*		EO.tiles  *** loads all texture data and stores in an array
+	*			.init()
+	*
+	*		EO.map  *** stores the three.js plane geometry (need to integrate with server map data)
+	*			.init()  *** creates our three.js object
+	*			.draw()  *** adds to scene (redundant, should be in init)
+	*			.update()  *** doesn't really do anything yet, supposed to handle incoming server data
+	*
+	* 	EO.characters  *** stores all player data, need to merge with .characters and come up with naming convention more suitable for all objects
+	* 		.add()  *** clones the character when called by EO.three.update() - ie new player connected to server and data was sent down
+	*
+	* 	EO.server  *** socket handler - current using socket.io
+	* 		.on(event) -
+	* 			news - 
+	* 			chat - 
+	* 			join -
+	* 			update -
+	* 			disconnect -
+	*
+ **/
+
 var EO = EO || {};
 
 //////////////////////////////////////////////////
@@ -10,6 +54,30 @@ EO.init = function() {
 	EO.map.init();
 	EO.input.init();
 	EO.render();
+}
+
+////////////////////
+// Dat render doe //
+////////////////////
+EO.render = function() {
+	//update view
+	EO.three.update();
+	//delta
+	var delta = 1.5 * EO.settings.clock.getDelta();
+	//util frame tick
+	var f = Math.floor(Date.now() / 600) % 3;
+	if (f !== EO.util.frame) EO.util.update();
+	EO.util.frame = f;
+	//input updates
+	EO.input.keyboard.update();
+	//animation mixer update
+	if (EO.three.mixer) EO.three.mixer.update( delta );
+	//render frame
+	EO.three.renderer.render( EO.three.scene, EO.three.camera );
+	//request next frame
+	requestAnimationFrame( EO.render );
+	//export scene to window for three.js inspector
+	window.scene = EO.three.scene;
 }
 
 //////////////
@@ -65,11 +133,11 @@ EO.three.init = function() {
 	var camera_top = EO.settings.height / 2;
 	var camera_bottom = EO.settings.height / - 2;
 	var near = -1000;
-	var far = 1000;
+	var far = 10000;
 	EO.three.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
 	EO.three.camera.position.z = 200;
 	EO.three.camera.position.x = 0;
-	EO.three.camera.position.y = 0 - 200;
+	EO.three.camera.position.y = 0 - 1200;
 	EO.three.camera.lookAt(new THREE.Vector3(0, 0, 0));
 	EO.three.camera.updateProjectionMatrix();
 	
@@ -335,27 +403,6 @@ EO.map.update = function() {
 		EO.map.geometry.faces[j+1].materialIndex = tileVal;
 	}
 
-}
-
-EO.render = function() {
-	//update view
-	EO.three.update();
-	//delta
-	var delta = 1.5 * EO.settings.clock.getDelta();
-	//util frame tick
-	var f = Math.floor(Date.now() / 600) % 3;
-	if (f !== EO.util.frame) EO.util.update();
-	EO.util.frame = f;
-	//input updates
-	EO.input.keyboard.update();
-	//animation mixer update
-	if (EO.three.mixer) EO.three.mixer.update( delta );
-	//render frame
-	EO.three.renderer.render( EO.three.scene, EO.three.camera );
-	//request next frame
-	requestAnimationFrame( EO.render );
-	//export scene to window for three.js inspector
-	window.scene = EO.three.scene;
 }
 
 //////////////////////////////////
