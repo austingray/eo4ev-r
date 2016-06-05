@@ -1,52 +1,188 @@
-//utils
-//eventually we will replace this method with manually constructing the cloned object, eg:
-//var clonedObject = { knownProp: obj.knownProp, ... } //via http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-an-object/5344074#5344074
-//current implementation via http://stackoverflow.com/questions/12690107/clone-object-without-reference-javascript
-var clone_object = require('./util/clone_object');
+/**
+ *
+ *  SERVER.players  *** contains all data about currently connected players
+ *
+ *  SERVER.view  *** namespace for all server computations
+ *    .localView  *** the function that handles each players current view data, this is called and returns an object that is sent to the player
+ *    .playerView  *** determines which other players a current player should see, and returns that object data
+ *    .mapView *** determines the map data that a current player should see, and returns that object data, returns an array of map grids, translated to planes on client's view
+ *
+ *  SERVER.socket  *** socket handler, contains all socket interactions, used as the module export
+ * 
+ */
 
-//let's phase out the old arrays with users object
-var user_map = [];
-var users = {};
+var SERVER = {};
 
-var translateLocalView = function(socket_id) {
+//////////////////////
+// database methods //
+//////////////////////
+SERVER.db = {};
+SERVER.db.fetchUser = function(socket_id) {
+  var user = {};
+  user.name = 'Guest'+Math.floor(Math.random() * 100000);
+  user.view = {};
+  user.view.pos = {x:0, y:0, z:0};
+  user.view.rot = 0;
+  user.view.walking = false;
+  return user;
+}
 
-  var user = users[socket_id];
-  if (typeof user == 'undefined') {
-    return false;
-  }
-  var localArray = {};
-  if (typeof user.view != 'undefined') {
-    localArray.offset = user.view.pos;
-  } else {
-    localArray.offset = {x:0, y:0, z:0};
-  }
-  localArray.objects = [];
+////////////////////////////////////////
+// Contains all connected player data //
+////////////////////////////////////////
+SERVER.players = {};
+SERVER.players.data = {};
+SERVER.players.index = [];
+SERVER.players.create = function(socket_id) {
+  var user = SERVER.db.fetchUser(socket_id);
+  this.index.push(socket_id);
+  this.data[socket_id] = user;
+}
+SERVER.players.delete = function() {
+
+}
+//currently handles player input, maybe want to route this in its own namespace
+SERVER.players.updatePlayer = function(socket_id, inputs) {
   
-  for (var i = 0; i < user_map.length; i++) {
-    var add_user_to_local_view = false;
-    var check_this_user = users[user_map[i]];
-    if (check_this_user.name === user.name) {
-      if (user.view) {
-        check_this_user = clone_object(user);
-        //check_this_user.view.pos = {x:0, y:0, z:0};
-      }
-      add_user_to_local_view = true;
-    };
-    if (typeof check_this_user.view !== 'undefined' && typeof user.view !== 'undefined' && check_this_user.view.pos.x - user.view.pos.x < 100 && check_this_user.view.pos.y - user.view.pos.y < 100) {
-      add_user_to_local_view = true;
-    }
-    if (add_user_to_local_view === true) {
-      localArray.objects.push(check_this_user);
+  var walking = false;
+  var cRot;
+  var mSpeed = 1.55;
+  var cUp = inputs[0]; var cRight = inputs[1]; var cDown = inputs[2]; var cLeft = inputs[3];
+  var pos = { x: 0, y: 0, z: 0 };
+
+  if (cDown) { cRot = 0; walking = true; }
+  if (cUp) { cRot = 3.20; walking = true; }
+  if (cLeft) { cRot = -1.6; walking = true;
+    if (cDown) { cRot = -0.8; mSpeed = 1; }
+    if (cUp) { cRot = -2.4; mSpeed = 1; }
+  }
+  if (cRight) { cRot = 1.6; walking = true;
+    if (cDown) { cRot = 0.8; mSpeed = 1; }
+    if (cUp) { cRot = 2.4; mSpeed = 1; }
+  }
+  if (cDown) pos.y = pos.y - mSpeed;
+  if (cUp) pos.y = pos.y + mSpeed;
+  if (cLeft) pos.x = pos.x - mSpeed;
+  if (cRight) pos.x = pos.x + mSpeed;
+
+  var old_pos = { x: 0, y: 0,  z: 0 };
+  var old_view = SERVER.players.data[socket_id].view;
+
+  if (typeof old_view != 'undefined') {
+    old_pos = old_view.pos;
+  }
+  if (typeof cRot === 'undefined') {
+    if (typeof old_view === 'undefined') {
+      cRot = 0;
+    } else {
+      cRot = old_view.rot;
     }
   }
 
-  return localArray;
+  var new_pos = { x: old_pos.x + pos.x, y: old_pos.y + pos.y, z: old_pos.z + pos.z };
+
+  view = {
+    walking: walking,
+    rot: cRot,
+    pos: new_pos
+  };
+
+  SERVER.players.data[socket_id].view = view;
+
+};
+
+//////////////////////////////////////////////////////////
+// Calculates the scene data that the user will display //
+//////////////////////////////////////////////////////////
+SERVER.view = {};
+SERVER.view.localView = function(socket_id) {
+  localView = {};
+  localView.players = this.playerView(socket_id);
+  localView.maps = this.mapView(socket_id);
+  return localView;
+}
+SERVER.view.playerView = function(socket_id) {
+
+  var player = SERVER.players.data[socket_id];
+  if (typeof player === 'undefined') return false;
+
+  var playerView = [];
+  for (var i = 0; i < SERVER.players.index.length; i++) {
+    //loop through all connected players // eventually should break into testing zones/regions, 
+    var player_is_visible = false;
+    var key = SERVER.players.index[i];
+    var player_check = SERVER.players.data[key];
+    //check if this is our current player so camera knows who to focus on
+    player_check.isPlayer = false;
+    if (player_check.name === player.name) player_check.isPlayer = true;
+    //if (isCloseEnough(player, player_check)) { 
+    playerView.push(player_check);
+    //};
+  }
+
+  return playerView;
+
+}
+SERVER.view.mapView = function(socket_id) {
+  return false;
+}
+
+/////////////////////////////////////
+// Handles all socket input output //
+/////////////////////////////////////
+SERVER.socket = function(io) {
+
+  //socket.io connection handler
+  io.on('connection', function (socket) {
+
+    //init connection
+    SERVER.players.create(socket.id);
+    //emit 'join' tells client to EO.init();
+    socket.emit('join');
+    //join unique channel
+    socket.join(SERVER.players.data[socket.id].name);
+    //send MotD
+    socket.emit( 'news', { message: 'Welcome to EO!' });
+    //announce new user
+    socket.broadcast.emit(SERVER.players.data[socket.id].name + ' has joined the room!');
+    //chat handler
+    socket.on('chat', function (data) {
+      io.emit('chat', { user: SERVER.players.data[socket.id].name, message: data.message });
+    });
+
+    //input handler
+    socket.on('input', function (data) {
+      SERVER.players.updatePlayer(socket.id, data);
+    });
+
+    //disconnect handler
+    socket.on('disconnect', function () {
+      var index = SERVER.players.index.indexOf(socket.id);
+      if (index > -1) {
+        var uname = SERVER.players.data[socket.id].name;
+        SERVER.players.index.splice(index, 1);
+        delete SERVER.players.data[socket.id];
+      }
+      io.emit('disconnect', {name: uname});
+      console.log(uname + ' has disconnected.');
+    });
+
+    setInterval(function() {
+      if (typeof SERVER.players.data[socket.id] !== 'undefined') {
+        io.sockets.in( SERVER.players.data[socket.id].name ).emit( 'update' , { localView: SERVER.view.localView(socket.id) } );
+      }
+    }, 33);
+
+  //end io
+  });
 
 }
 
+
+//um, ok
 var sendMapChunk = function(socket_id) {
 
-  var user = users[socket_id];
+  var user = SERVER.players.data[socket_id];
   if (typeof user == 'undefined') {
     return false;
   }
@@ -73,128 +209,7 @@ var sendMapChunk = function(socket_id) {
 }
 
 
-
-/**
- * Invoked whenever a user connects to the server
- * @param  {string} socket_id socket.io generated user id
- * @return {void}
- */
-var initNewConnection = function(socket_id) {
-  var user = {};
-  user.name = 'Guest'+Math.floor(Math.random() * 100000);
-  user_map.push(socket_id);
-  users[socket_id] = user;
-  return;
-}
-
-var calculateMovement = function(inputs) {
-
-  var walking = false;
-  var cRot;
-  var mSpeed = 1.55;
-  var cUp = inputs[0];
-  var cRight = inputs[1];
-  var cDown = inputs[2];
-  var cLeft = inputs[3];
-  var pos = {
-    x: 0,
-    y: 0,
-    z: 0
-  };
-
-  if (cDown) {
-    cRot = 0;
-    walking = true;
-  }
-  if (cUp) {
-    cRot = 3.20;
-    walking = true;
-  }
-  if (cLeft) {
-    cRot = -1.6;
-    walking = true;
-    if (cDown) {
-      cRot = -0.8;
-      mSpeed = 1;
-    }
-    if (cUp) {
-      cRot = -2.4;
-      mSpeed = 1;
-    }
-  }
-  if (cRight) {
-    cRot = 1.6;
-    walking = true;
-    if (cDown) {
-      cRot = 0.8;
-      mSpeed = 1;
-    }
-    if (cUp) {
-      cRot = 2.4;
-      mSpeed = 1;
-    }
-  }
-
-  if (cDown) pos.y = pos.y - mSpeed;
-  if (cUp) pos.y = pos.y + mSpeed;
-  if (cLeft) pos.x = pos.x - mSpeed;
-  if (cRight) pos.x = pos.x + mSpeed;
-
-  var movements = {
-    cRot: cRot,
-    mSpeed: mSpeed,
-    pos: pos,
-    walking: walking
-  }
-
-  return movements;
-}
-
-function updateUserPos(movement) {
-
-  var old_pos = {
-    x: 0,
-    y: 0, 
-    z: 0
-  };
-  
-  var cRot = movement.cRot;
-  var mSpeed = movement.mSpeed;
-  var walking = movement.walking;
-  var pos = movement.pos;
-  var socket_id = movement.socket_id;
-
-  var old_view = users[socket_id].view;
-
-  if (typeof old_view != 'undefined') {
-    old_pos = old_view.pos;
-  }
-  if (typeof cRot === 'undefined') {
-    if (typeof old_view === 'undefined') {
-      cRot = 0;
-    } else {
-      cRot = old_view.rot;
-    }
-  }
-
-  var new_pos = {
-    x: old_pos.x + pos.x,
-    y: old_pos.y + pos.y,
-    z: old_pos.z + pos.z
-  };
-
-  view = {
-    walking: walking,
-    rot: cRot,
-    pos: new_pos
-  };
-
-  users[socket_id].view = view;
-
-  return;
-}
-
-//game stuffz
+//uhhh delete?
 var GAME = {};
 GAME.map = {};
 GAME.map.init = function() {
@@ -234,54 +249,8 @@ GAME.map.tile.generate = function() {
 }
 GAME.map.init();
 
-//io
+
+//connect to the app
 module.exports = function(io) {
-  //socket.io connection handler
-  io.on('connection', function (socket) {
-
-    //init connection
-    initNewConnection(socket.id);
-    //emit 'join' tells client to EO.init();
-    socket.emit('join');
-    //join unique channel
-    socket.join(users[socket.id].name);
-    //send MotD
-    socket.emit( 'news', { message: 'Welcome to EO!' });
-    //announce new user
-    socket.broadcast.emit(users[socket.id].name + ' has joined the room!');
-    //chat handler
-    socket.on('chat', function (data) {
-      io.emit('chat', { user: users[socket.id].name, message: data.message });
-    });
-
-    //input handler
-    socket.on('input', function (data) {
-      //calculate movements
-      var movement = calculateMovement(data);
-      movement.socket_id = socket.id;
-      //update user position in global array
-      updateUserPos(movement);
-    });
-
-    //disconnect handler
-    socket.on('disconnect', function () {
-      var index = user_map.indexOf(socket.id);
-      if (index > -1) {
-        var uname = users[socket.id].name;
-        user_map.splice(index, 1);
-        delete users[socket.id];
-      }
-      io.emit('disconnect', {name: uname});
-      console.log(uname + ' has disconnected.');
-    });
-
-    setInterval(function() {
-      var localView = translateLocalView(socket.id);
-      if (typeof users[socket.id] !== 'undefined') {
-        io.sockets.in(users[socket.id].name).emit('update', {localView: localView});
-      }
-    }, 33);
-
-  //end io
-  });
+  SERVER.socket(io);
 }

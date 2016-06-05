@@ -94,10 +94,10 @@ EO.render = function() {
 EO.update = function() {
 	//if not ready, bail
 	if (typeof EO.server.data === 'undefined') return false;
-	//add new items
-	for (var k = 0; k < EO.server.data.localView.objects.length; k++) {
-		if ( ! EO.world.isActiveObject( EO.server.data.localView.objects[k].name) ) {
-			EO.models.addToWorld( 'hero', EO.server.data.localView.objects[k].name );
+	//add new players
+	for (var k = 0; k < EO.server.data.localView.players.length; k++) {
+		if ( ! EO.world.isActiveObject( EO.server.data.localView.players[k].name) ) {
+			EO.models.addToWorld( 'hero', EO.server.data.localView.players[k].name );
 		}
 	}
 	//traverse the scene
@@ -172,9 +172,6 @@ EO.three.init = function() {
 	var near = -1000;
 	var far = 10000;
 	EO.three.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
-	EO.three.camera.position.z = 200;
-	EO.three.camera.position.x = 0;
-	EO.three.camera.position.y = 0 - 1200;
 	EO.three.camera.lookAt(new THREE.Vector3(0, 0, 0));
 	EO.three.camera.updateProjectionMatrix();
 	
@@ -223,6 +220,11 @@ EO.three.isWhitelistedObject = function(object_type) {
 	}
 	return isWhitelistedObject;
 }
+EO.three.updateCamera = function( position ) {
+	EO.three.camera.position.set( position.x, position.y - 2, 1 );
+	EO.three.camera.lookAt( position );
+	EO.three.camera.updateProjectionMatrix();
+}
 
 ////////////////////////
 // Dat World data doe //
@@ -248,7 +250,7 @@ EO.world.isActiveObject = function(name) {
 	return false;
 }
 EO.world.updateObject = function(object) {
-	serverObjects = EO.server.data.localView.objects;
+	serverObjects = EO.server.data.localView.players;
 	for (var i = 0; i < serverObjects.length; i++) {
 		if (serverObjects[i].name === object.name) {
 			var objectData = serverObjects[i];
@@ -262,6 +264,9 @@ EO.world.updateObject = function(object) {
 			EO.world.objects.active[objectData.name].animations.walk.play();
 		} else {
 			EO.world.objects.active[objectData.name].animations.walk.stop();
+		}
+		if (objectData.isPlayer) {
+			EO.three.updateCamera( object.position );
 		}
 	}
 }
@@ -479,7 +484,7 @@ EO.server.socket.on('disconnect', function(data) {
 });
 
 EO.server.isServerObject = function(object) {
-	var objects = EO.server.data.localView.objects;
+	var objects = EO.server.data.localView.players;
 	var isServerObject = false;
 	for (var i = 0; i < objects.length; i++) {
 		if (objects[i].name === object.name) {
