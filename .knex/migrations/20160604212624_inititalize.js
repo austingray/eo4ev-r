@@ -5,7 +5,7 @@
   Tables
   ---
   users *** website user login
-    id, uuid, nickname, email, hash, first_name, last_name, date_of_birth, created_at
+    id, uuid, username, email, hash, first_name, last_name, date_of_birth, created_at
 
   players *** game specific info for users, users can have many players
     id, user_id, created_at, name, race, experience, level, dead, weight, height, age, class, hitpoints, attack, defense, magic, resist, speed, agility, intelligence
@@ -17,7 +17,7 @@ exports.up = function(knex, Promise) {
       knex.schema.createTable("users", function (table) {
         table.increments().primary();
         table.string("email").notNullable().unique();
-        table.string("nickname").notNullable();
+        table.string("username").notNullable();
         table.string("hash").notNullable();
         table.timestamps();
         table.string("first_name");
