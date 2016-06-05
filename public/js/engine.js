@@ -50,7 +50,7 @@ EO.init = function() {
 	EO.models.init();
 	//EO.character.init();
 	EO.tiles.init();
-	EO.map.init();
+	//EO.map.init();
 	EO.input.init();
 	EO.render();
 }
