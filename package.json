@@ -6,23 +6,28 @@
     "type": "git",
     "url": "git@github.com:austingray/eo4ev-r.git"
   },
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node app"
   },
   "author": "Austin Gray",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^0.8.6",
     "body-parser": "^1.15.1",
+    "bookshelf": "^0.9.5",
     "connect-flash": "^0.1.1",
+    "connect-pg-simple": "^3.1.0",
+    "connect-session-knex": "^1.0.23",
     "cookie-parser": "^1.4.2",
     "express": "^4.13.4",
     "express-session": "^1.13.0",
+    "knex": "^0.11.5",
     "moment": "^2.13.0",
     "morgan": "^1.7.0",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
+    "passport.socketio": "^3.6.1",
     "pug": "^0.1.0",
     "serve-favicon": "^2.3.0",
     "socket.io": "^1.4.6"

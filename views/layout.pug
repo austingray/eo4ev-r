@@ -3,22 +3,12 @@ html
   head
     title= title
     link(rel='stylesheet', href='/css/style.css')
-    script(src='js/lib/three.js')
-    script(src='js/lib/threex.keyboardstate.js')
-    script(src='js/lib/TrackballControls.js')
-    script(src='js/lib/Stats.js')
     script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js')
-    script(src='/socket.io/socket.io.js')
-    script.
-      $(document).ready(function() {
-        $('#input input').keydown(function(event) {
-          if (event.which === 13) {
-            var msg = $(this).val();
-            $(this).val('');
-            EO.server.socket.emit('chat', { message: msg });
-          }
-        });
-      });
-
+    
   body
+
+    section(id='header')
+    div(id='logo')
+      h2 Dat three.js doe
+
     block content

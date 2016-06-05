@@ -1,0 +1,41 @@
+extends layout.pug
+
+block content
+
+  section(id='content')
+    div(class='container')
+      if flash
+        div(style='color:red') #{flash}
+      form(role='form', name='login', method='post', action='/login')
+        div(class='login-inputs')
+          div(class='row')
+            label Username
+            input(name='username', type='text')
+          div(class='row')
+            label Password
+            input(name='password', type='password')
+        div(class='register-inputs' style='display:none')
+          div(class='row')
+            label Confirm Password
+            input(name='password_confirm', type='password')
+          div(class='row')
+            label Email
+            input(name='email', type='email')
+        div(class='submit')
+          div(class='row')
+            label
+              | Register New Account
+              input(name='register', type='checkbox')
+          div(class='row')
+            input(type='submit', value='I Love EO4Ev-r!!!')
+
+  script.
+    $('input[name="register"]').on('click', function() {
+      if ( $(this).prop('checked') === true ) {
+        $('form[name="login"]').attr('action', '/register');
+        $('.register-inputs').slideDown();
+      } else {
+        $('form[name="login"]').attr('action', '/login');
+        $('.register-inputs').slideUp();
+      }
+    });
