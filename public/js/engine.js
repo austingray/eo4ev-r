@@ -468,6 +468,7 @@ EO.server.socket.on('chat', function (data) {
 		"class":"chat"
 	}).html(data.user + ': ' + data.message);
 	$('#feed').append($output);
+	$('#feed').scrollTop($('#feed').height());
 });
 
 EO.server.socket.on('join', function(data) {

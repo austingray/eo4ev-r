@@ -11,10 +11,14 @@ var Players = require('../db/players.js')
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
+  res.render('home', { title: 'Welcome to the homepage for EO4Ev-r' });
+});
+
+router.get('/game', function(req, res, next) {
   if (typeof req.user === 'undefined') {
-    res.redirect('/account');
+    res.redirect('/');
   } else {
-    res.render('index', { title: 'Dat three.js doe' });
+    res.render('game', { title: 'Dat three.js doe' });
   }
 });
 

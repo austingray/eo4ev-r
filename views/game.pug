@@ -1,16 +1,11 @@
-extends gamehead.pug
+extends layout.pug
 
 block content
-  div(id='menubar')
-    div(id='logo') eo4ev-r
-    a(href='/account') My Account
-    a(href='/logout') Logout
-  div(id='container')
-    canvas(id='gamecanvas')
-    div(id='status')
-      div(id='feed')
-      div(id='input')
-        input(type='text')
+  canvas(id='gamecanvas')
+  div(id='status')
+    div(id='feed')
+    div(id='input')
+      input(type='text')
 
   script(src='js/engine.js')
   script.

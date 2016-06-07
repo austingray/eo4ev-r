@@ -142,6 +142,8 @@ SERVER.socket = function(data) {
 
     console.log(socket.request.user);
 
+    io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
+
     //init connection
     SERVER.players.create(socket.id);
     //emit 'join' tells client to EO.init();
@@ -154,7 +156,7 @@ SERVER.socket = function(data) {
     socket.broadcast.emit(SERVER.players.data[socket.id].name + ' has joined the room!');
     //chat handler
     socket.on('chat', function (data) {
-      io.emit('chat', { user: SERVER.players.data[socket.id].name, message: data.message });
+      io.emit('chat', { user: socket.request.user.username, message: data.message });
     });
 
     //input handler
@@ -164,6 +166,7 @@ SERVER.socket = function(data) {
 
     //disconnect handler
     socket.on('disconnect', function () {
+      io.emit('news', { message: socket.request.user.username + ' has returned to the mundane world.' } );
       var index = SERVER.players.index.indexOf(socket.id);
       if (index > -1) {
         var uname = SERVER.players.data[socket.id].name;
