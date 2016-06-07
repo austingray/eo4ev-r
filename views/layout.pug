@@ -3,31 +3,33 @@ html
   head
     title= title
     link(rel='stylesheet', href='/css/style.css')
-    script(src='js/lib/three.js')
-    script(src='js/lib/threex.keyboardstate.js')
-    script(src='js/lib/TrackballControls.js')
-    script(src='js/lib/Stats.js')
     script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js')
-    script(src='/socket.io/socket.io.js')
-    script.
-      $(document).ready(function() {
-        $('#input input').keydown(function(event) {
-          if (event.which === 13) {
-            var msg = $(this).val();
-            $(this).val('');
-            EO.server.socket.emit('chat', { message: msg });
-          }
+    if load_game_scripts === true
+      script(src='js/lib/three.js')
+      script(src='js/lib/threex.keyboardstate.js')
+      script(src='js/lib/TrackballControls.js')
+      script(src='js/lib/Stats.js')
+      script(src='/socket.io/socket.io.js')
+      script.
+        $(document).ready(function() {
+          $('#input input').keydown(function(event) {
+            if (event.which === 13) {
+              var msg = $(this).val();
+              $(this).val('');
+              EO.server.socket.emit('chat', { message: msg });
+            }
+          });
         });
-      });
 
   body(class='game')
     div(id='menubar')
-      div(id='logo') eo4ev-r
+      div(id='logo')
+        a(href='/') Eo Forever
       if (user)
-        | Logged in as
-        a(href='/') #{user.username} |
-        a(href='/logout') Logout
+        a(class='menu-item', href='/account') Logged in as #{user.username} |
+        a(class='menu-item', href='/logout') Logout
       else
-        a(href='/account') My Account
+        a(class='menu-item', href='/account') Create an Account
+        a(class='menu-item', href='/account') | Login
     div(id='container')
       block content

@@ -11,14 +11,31 @@ var Players = require('../db/players.js')
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('home', { title: 'Welcome to the homepage for EO4Ev-r' });
+  res.render('home', { title: 'Welcome to the homepage for EO4Ev-r', user: req.user });
 });
 
-router.get('/game', function(req, res, next) {
+router.get('/post', function(req, res, next) {
+  if (req.user) {
+    new Users({ username: req.user.username }).fetch().then(function(model) {
+      if (model === null) res.redirect('/');
+      var user = model.toJSON();
+      if (user.access === 10) {
+        res.render('post', { title: 'hey there super cool admin guy' });
+      } else {
+        res.redirect('/');
+      }
+    });
+  } else {
+    res.redirect('/');
+  }
+  //res.render('post', { title: })
+});
+
+router.get('/play', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.redirect('/');
   } else {
-    res.render('game', { title: 'Dat three.js doe' });
+    res.render('game', { title: 'Dat three.js doe', load_game_scripts: true, user: req.user });
   }
 });
 

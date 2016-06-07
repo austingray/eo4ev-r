@@ -24,16 +24,20 @@ body.game {
 }
 #menubar #logo {
   float:left;
-  color:#fff;
+}
+#menubar #logo a {
   font-size:24px;
+  color:#fff;
 }
 #menubar a {
   color:#fff;
-  font-size:14px;
+  font-size:16px;
   text-decoration: none;
   display:inline-block;
-  margin-left:14px;
-  text-transform: uppercase;
+}
+#menubar a.menu-item {
+  margin-left:12px;
+  margin-top:8px;
 }
 #container {
       position:relative;
