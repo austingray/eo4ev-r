@@ -130,10 +130,17 @@ SERVER.view.mapView = function(socket_id) {
 /////////////////////////////////////
 // Handles all socket input output //
 /////////////////////////////////////
-SERVER.socket = function(io) {
+SERVER.socket = function(data) {
+
+  const io = data.io;
+  const io_session = data.io_session;
+
+  io.use(io_session);
 
   //socket.io connection handler
   io.on('connection', function (socket) {
+
+    console.log(socket.request.user);
 
     //init connection
     SERVER.players.create(socket.id);

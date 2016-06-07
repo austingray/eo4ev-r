@@ -1,7 +1,10 @@
 extends gamehead.pug
 
 block content
-  
+  div(id='menubar')
+    div(id='logo') eo4ev-r
+    a(href='/account') My Account
+    a(href='/logout') Logout
   div(id='container')
     canvas(id='gamecanvas')
     div(id='status')

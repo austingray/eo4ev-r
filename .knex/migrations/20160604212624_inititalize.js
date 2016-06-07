@@ -28,6 +28,7 @@ exports.up = function(knex, Promise) {
       knex.schema.createTable("players", function (table) {
         table.increments().primary();
         table.integer("user_id").references("id").inTable("users");
+        table.json("position").notNullable();
         table.timestamps();
         table.string("name").notNullable().unique();
         table.string("race").notNullable().defaultTo('Human');
@@ -48,6 +49,7 @@ exports.up = function(knex, Promise) {
         table.integer("intelligence").notNullable().defaultTo(10);
       })
     ]);
+
 };
 
 exports.down = function(knex, Promise) {

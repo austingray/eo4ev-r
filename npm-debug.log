@@ -9,10 +9,10 @@
 8 verbose lifecycle eo4evr@1.0.0~start: unsafe-perm in lifecycle true
 9 verbose lifecycle eo4evr@1.0.0~start: PATH: /usr/local/lib/node_modules/npm/bin/node-gyp-bin:/Users/austingray/Desktop/projects/eo4evr/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/3.4/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Postgres.app/Contents/Versions/9.4/bin
 10 verbose lifecycle eo4evr@1.0.0~start: CWD: /Users/austingray/Desktop/projects/eo4evr
-11 silly lifecycle eo4evr@1.0.0~start: Args: [ '-c', 'node ./bin/www' ]
+11 silly lifecycle eo4evr@1.0.0~start: Args: [ '-c', 'node app' ]
 12 silly lifecycle eo4evr@1.0.0~start: Returned: code: 1  signal: null
 13 info lifecycle eo4evr@1.0.0~start: Failed to exec start script
-14 verbose stack Error: eo4evr@1.0.0 start: `node ./bin/www`
+14 verbose stack Error: eo4evr@1.0.0 start: `node app`
 14 verbose stack Exit status 1
 14 verbose stack     at EventEmitter.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/lifecycle.js:233:16)
 14 verbose stack     at emitTwo (events.js:87:13)
@@ -29,13 +29,13 @@
 19 error node v4.0.0
 20 error npm  v3.3.3
 21 error code ELIFECYCLE
-22 error eo4evr@1.0.0 start: `node ./bin/www`
+22 error eo4evr@1.0.0 start: `node app`
 22 error Exit status 1
-23 error Failed at the eo4evr@1.0.0 start script 'node ./bin/www'.
+23 error Failed at the eo4evr@1.0.0 start script 'node app'.
 23 error This is most likely a problem with the eo4evr package,
 23 error not with npm itself.
 23 error Tell the author that this fails on your system:
-23 error     node ./bin/www
+23 error     node app
 23 error You can get their info via:
 23 error     npm owner ls eo4evr
 23 error There is likely additional logging output above.

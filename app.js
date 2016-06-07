@@ -103,14 +103,14 @@ passport.use(new LocalStrategy(
   }
 ));
 
-io.use(passportSocketIo.authorize({
+var io_session = passportSocketIo.authorize({
   cookieParser: cookieParser,       // the same middleware you registrer in express
   key:          'connect.sid',       // the name of the cookie where express/connect stores its session_id
   secret:       'to be or not to be!? das de mudda fuckin question!!!',    // the session_secret to parse the cookie
   store:        store,        // we NEED to use a sessionstore. no memorystore please
   success:      onAuthorizeSuccess,  // *optional* callback on success - read more below
   fail:         onAuthorizeFail,     // *optional* callback on fail/error - read more below
-}));
+});
 
 //start er up
 var debug = require('debug')('express-generator:server');
@@ -123,7 +123,7 @@ function onAuthorizeSuccess(data, accept){
 
   // The accept-callback still allows us to decide whether to
   // accept the connection or not.
-  accept(null, true);
+  //accept(null, true);
 
   // OR
 
@@ -149,7 +149,7 @@ function onAuthorizeFail(data, message, error, accept){
   // see: http://socket.io/docs/client-api/#socket > error-object
 }
 //game engine
-var game_server = require('./game/server')(io);
+var game_server = require('./game/server')({io: io, io_session: io_session});
 
 /**
  * Listen on provided port, on all network interfaces.
