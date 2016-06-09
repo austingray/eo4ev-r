@@ -7,7 +7,7 @@ exports.up = function(knex, Promise) {
       table.string("email").notNullable().unique();
       table.string("username").notNullable();
       table.string("hash").notNullable();
-      table.timestamps(true);
+      table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
       table.string("first_name");
       table.string("last_name");
       table.string("date_of_birth");
@@ -18,7 +18,7 @@ exports.up = function(knex, Promise) {
       table.increments().primary();
       table.integer("user_id").references("id").inTable("users");
       table.json("position").notNullable();
-      table.timestamps(true);
+      table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
       table.string("name").notNullable().unique();
       table.string("race").notNullable().defaultTo('Human');
       table.integer("experience").notNullable().defaultTo(0);
@@ -41,9 +41,9 @@ exports.up = function(knex, Promise) {
     knex.schema.createTable("posts", function (table) {
       table.increments().primary();
       table.integer("user_id").references("id").inTable("users");
-      table.string("post_title");
-      table.string("post_content");
-      table.timestamps(true);
+      table.text("post_title");
+      table.text("post_content");
+      table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     })
 
   ])

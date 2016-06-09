@@ -3,34 +3,65 @@ var router = express.Router();
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var bcrypt = require('bcrypt');
+var sanitize = require('sanitize-html');
 
 //db objects
 var knex = require('knex');
 var Users = require('../db/users.js');
-var Players = require('../db/players.js')
+var Players = require('../db/players.js');
+var Posts = require('../db/posts.js');
 
-/* GET home page. */
+///////////////
+// Home page //
+///////////////
 router.get('/', function(req, res, next) {
-  res.render('home', { title: 'Welcome to the homepage for EO4Ev-r', user: req.user });
+  new Posts().fetchAll({withRelated: ['user']}).then(function(posts) {
+    console.log(posts.toJSON());
+    res.render('home', { title: 'Welcome to the homepage for EO4Ev-r', user: req.user, posts: posts.toJSON() });
+  });
 });
 
-router.get('/post', function(req, res, next) {
+/////////////////
+// Admin panel //
+/////////////////
+router.get('/datadmindoe', function(req, res, next) {
   if (req.user) {
     new Users({ username: req.user.username }).fetch().then(function(model) {
       if (model === null) res.redirect('/');
       var user = model.toJSON();
       if (user.access === 10) {
-        res.render('post', { title: 'hey there super cool admin guy' });
+        res.render('admin', { title: 'hey there super cool admin guy' });
       } else {
-        res.redirect('/');
+        res.sendStatus(404);
       }
     });
   } else {
-    res.redirect('/');
+    res.sendStatus(404);
   }
-  //res.render('post', { title: })
+});
+router.post('/datadmindoe', function(req, res, next) {
+  if (req.user) {
+    new Users({ username: req.user.username }).fetch().then(function(model) {
+      if (model === null) res.redirect('/');
+      var user = model.toJSON();
+      if (user.access === 10) {
+        //passes validation, handle it
+        console.log(req.body);
+        new Posts({ user_id: req.user.id, post_title: sanitize(req.body.post_title), post_content: sanitize(req.body.post_content) }).save().then(function(model) {
+          res.redirect('/');
+        });
+      } else {
+        res.sendStatus(404);
+      }
+    });
+  } else {
+    res.sendStatus(404);
+  }
 });
 
+///////////////////
+// Play the game //
+///////////////////
 router.get('/play', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.redirect('/');
@@ -39,6 +70,9 @@ router.get('/play', function(req, res, next) {
   }
 });
 
+/////////////////////////
+// Manage your account //
+/////////////////////////
 router.get('/account', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.render('login', { title: 'Dat three.js doe - Login/Register', flash: req.flash('error') });
@@ -112,7 +146,9 @@ router.post('/login', passport.authenticate('local', {
     res.redirect('/account');
 });
 
-//helper function to convert username to lowercase and check if it is already taken
+//////////////////////////////////////////////////////////////////////////////////////
+//helper function to convert username to lowercase and check if it is already taken //
+//////////////////////////////////////////////////////////////////////////////////////
 function convert_to_lower_then_check(username, callback) {
   var _username = username.toLowerCase();
   new Users().query('whereRaw', 'LOWER(username) = ?', _username).fetch().then(function(model) {
@@ -125,5 +161,6 @@ function convert_to_lower_then_check(username, callback) {
     }
   });
 }
+
 
 module.exports = router;

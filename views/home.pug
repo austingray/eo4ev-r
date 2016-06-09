@@ -1,3 +1,14 @@
 extends layout.pug
 
 block content
+  div(class='content')
+    h1 Dev Updates
+    each post in posts
+      article(class='post-wrapper')
+        header(class='post-header')
+          div(class='post-title') #{post.post_title}
+          div(class='post-meta')
+            span(class='author') Posted by #{post.user.username} 
+            - var dateTime = post.created_at.toLocaleString('en-US', {timeZone: 'America/New_York'});
+            span(class='posted_on') on #{dateTime}
+        div(class='post-content')!= post.post_content

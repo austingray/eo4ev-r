@@ -29,6 +29,7 @@
     "passport-local": "^1.0.0",
     "passport.socketio": "^3.6.1",
     "pug": "^0.1.0",
+    "sanitize-html": "^1.11.4",
     "serve-favicon": "^2.3.0",
     "socket.io": "^1.4.6"
   }

@@ -39,6 +39,7 @@ body.game {
   margin-left:12px;
   margin-top:8px;
 }
+
 #container {
       position:relative;
       display:block;
@@ -46,6 +47,8 @@ body.game {
       width:1200px;
       height:600px;
       border:1px solid silver;
+      background: rgba(25, 25, 25, 0.49);
+      color: #B0BDB4;
     }
     #gamecanvas {
       margin:auto;
@@ -124,3 +127,46 @@ body.game {
       padding:9px;
       outline:none;
     }
+
+.content {
+  padding:24px;
+  height:600px;
+  overflow-y:scroll;
+}
+.content article {
+  border-top:1px solid #B0BDB4;
+  padding-top:24px;
+}
+.content article .post-title {
+  font-size:24px;
+  font-weight:bold;
+}
+.content article .post-meta {
+  font-size:14px;
+}
+.content article header {
+  margin-bottom:24px;
+}
+.content article a {
+  color:#2BA6BD
+}
+form.form {
+  width:400px;
+  margin:0 auto;
+}
+form.form .row {
+  margin-bottom:12px;
+}
+form.form .row label {
+  display:block;
+}
+form.form .row input {
+  display:block;
+  width:100%;
+  padding:7px;
+}
+form.form .row.submit input {
+  display:block;
+  cursor:pointer;
+  -webkit-appearance:none;
+}
