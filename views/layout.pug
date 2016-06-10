@@ -29,7 +29,7 @@ html
         a(class='menu-item', href='/account') Logged in as #{user.username} |
         a(class='menu-item', href='/play') Play
       else
-        a(class='menu-item', href='/account') Create an Account
-        a(class='menu-item', href='/account') | Login
+        a(class='menu-item', href='/account') Login
+        a(class='menu-item', href='/account') | Create an Account
     div(id='container')
       block content

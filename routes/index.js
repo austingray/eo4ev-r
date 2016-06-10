@@ -8,7 +8,7 @@ var sanitize = require('sanitize-html');
 //db objects
 var knex = require('knex');
 var Users = require('../db/users.js');
-var Players = require('../db/players.js');
+var Characters = require('../db/characters.js');
 var Posts = require('../db/posts.js');
 
 ///////////////
@@ -77,10 +77,21 @@ router.get('/account', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.render('login', { title: 'Dat three.js doe - Login/Register', flash: req.flash('error') });
   } else {
-    res.render('account', { title: 'Dat three.js doe - My Account', user: req.user });
+    new Characters({ id: req.user.id }).fetch().then(function(model) {
+      if (model === null) {
+        var characters = false;
+      } else {
+        var characters = model.toJSON();
+      }
+      res.render('account', { title: 'Dat three.js doe - My Account', user: req.user, characters: characters });
+    });
   }
 });
 
+
+//////////////////////////////////
+// account registrations action //
+//////////////////////////////////
 router.post('/register', function(req, res, next) {
 
   if (req.body.register === 'on') {

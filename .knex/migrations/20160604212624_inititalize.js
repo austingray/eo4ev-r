@@ -12,9 +12,10 @@ exports.up = function(knex, Promise) {
       table.string("last_name");
       table.string("date_of_birth");
       table.integer("access").defaultTo(1)
+      table.integer("current_character").references("id").inTable("characters");
     }),
 
-    knex.schema.createTable("players", function (table) {
+    knex.schema.createTable("characters", function (table) {
       table.increments().primary();
       table.integer("user_id").references("id").inTable("users");
       table.json("position").notNullable();

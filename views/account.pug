@@ -1,11 +1,18 @@
 extends layout.pug
 
 block content
+  div(class='content')
+    h1 #{user.username}
 
-  section(id='content')
-    div(class='container')
-      | sup #{user.username}
+    div(class='characters')
+      h3 Your Characters
 
-    div(class='container')
-      p 
-        a(href='/play') Play da game
+      if characters
+        each char in characters
+          div(class='character')
+            span(class='character-name') char.name
+      else
+        div(class='message') You haven't created any characters yet.
+
+      p
+        a(class='button', href='/character') Create a new character
