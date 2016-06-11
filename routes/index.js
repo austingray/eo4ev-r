@@ -88,6 +88,17 @@ router.get('/account', function(req, res, next) {
   }
 });
 
+////////////////////////
+// create a character //
+////////////////////////
+router.get('/character', function(req, res, next) {
+  if (typeof req.user === 'undefined') {
+    res.redirect('/account');
+  } else {
+    res.render('account', { title: 'Dat three.js doe - Character Creation' });
+  }
+});
+
 
 //////////////////////////////////
 // account registrations action //

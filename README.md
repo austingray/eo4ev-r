@@ -17,8 +17,11 @@
 * PostgreSQL - database
 
 ### installation instructions
-1. setup database via psql --- CREATE USER eo_us WITH PASSWORD 'eo_pw'; CREATE DATABASE eo_db OWNER eo_us;
-2. run database migration script --- npm install -g knex | cd /dir/to/project/.knex/ && knex migrate:latest
-3. haven't installed fresh but this should work --- cd /dir/to/project/ && npm install | npm start
+1. install postgres ---- https://www.postgresql.org/
+2. setup database via psql --- CREATE USER eo_us WITH PASSWORD 'eo_pw'; CREATE DATABASE eo_db OWNER eo_us;
+3. install knex --- npm install -g knex
+4. run database migration ---  cd /dir/to/project/.knex/ && knex migrate:latest
+5. run database seed --- cd /dir/to/project/.knex/ && knex seed:run
+3. run package install, start server --- cd /dir/to/project/ && npm install && npm start
 4. visit http://localhost:8081
-5. blog post access --- UPDATE users SET access = 10 WHERE id = <user.id>;
+5. blog post access at http://localhost:8081/datadmindoe --- UPDATE users SET access = 10 WHERE id = <user.id>;
