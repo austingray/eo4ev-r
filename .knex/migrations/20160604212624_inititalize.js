@@ -21,14 +21,16 @@ exports.up = function(knex, Promise) {
       table.json("position").notNullable();
       table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
       table.string("name").notNullable().unique();
-      table.string("race").notNullable().defaultTo('Human');
+      table.integer("sex").notNullable().references("id").inTable("sexes");
+      table.integer("race").notNullable().references("id").inTable("races");
+      table.integer("class").notNullable().references("id").inTable("classes");
       table.integer("experience").notNullable().defaultTo(0);
       table.integer("level").notNullable().defaultTo(0);
       table.boolean("dead").notNullable().defaultTo(false);
       table.integer("weight").notNullable().defaultTo(160);
       table.integer("height").notNullable().defaultTo(160);
       table.integer("age").notNullable().defaultTo(30);
-      table.string("class").notNullable().defaultTo('Fighter');
+      table.integer("health").notNullable().defaultTo(100);
       table.integer("hitpoints").notNullable().defaultTo(100);
       table.integer("attack").notNullable().defaultTo(10);
       table.integer("defense").notNullable().defaultTo(10);
@@ -37,6 +39,21 @@ exports.up = function(knex, Promise) {
       table.integer("speed").notNullable().defaultTo(10);
       table.integer("agility").notNullable().defaultTo(10);
       table.integer("intelligence").notNullable().defaultTo(10);
+    }),
+
+    knex.schema.createTable("sexes", function (table) {
+      table.increments().primary();
+      table.string("name")
+    }),
+
+    knex.schema.createTable("races", function (table) {
+      table.increments().primary();
+      table.string("name");
+    }),
+
+    knex.schema.createTable("classes", function (table) {
+      table.increments().primary();
+      table.string("name");
     }),
 
     knex.schema.createTable("posts", function (table) {

@@ -4,7 +4,7 @@ html
     title= title
     link(rel='stylesheet', href='/css/style.css')
     script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js')
-    if load_game_scripts === true
+    if scripts === 'game'
       script(src='js/lib/three.js')
       script(src='js/lib/threex.keyboardstate.js')
       script(src='js/lib/TrackballControls.js')
@@ -20,6 +20,9 @@ html
             }
           });
         });
+    if scripts === 'character'
+      script(src='js/lib/three.js')
+      script(src='js/lib/Stats.js')
 
   body(class='game')
     div(id='menubar')

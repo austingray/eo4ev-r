@@ -9,6 +9,9 @@ var sanitize = require('sanitize-html');
 var knex = require('knex');
 var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
+var Sexes = require('../db/sexes.js');
+var Races = require('../db/races.js');
+var Classes = require('../db/classes.js');
 var Posts = require('../db/posts.js');
 
 ///////////////
@@ -66,7 +69,7 @@ router.get('/play', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.redirect('/');
   } else {
-    res.render('game', { title: 'Dat three.js doe', load_game_scripts: true, user: req.user });
+    res.render('game', { title: 'Dat three.js doe', scripts: 'game', user: req.user });
   }
 });
 
@@ -95,7 +98,16 @@ router.get('/character', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.redirect('/account');
   } else {
-    res.render('account', { title: 'Dat three.js doe - Character Creation' });
+    new Sexes().fetchAll().then(function(sexes_model) {
+      var sexes = sexes_model.toJSON();
+      new Races().fetchAll().then(function(races_model) {
+        var races = races_model.toJSON();
+        new Classes().fetchAll().then(function(classes_model) {
+          var classes = classes_model.toJSON();
+          res.render('character', { title: 'Dat three.js doe - Character Creation', user: req.user, scripts: 'character', sexes: sexes, races: races, classes: classes });
+        })
+      })
+    })
   }
 });
 
