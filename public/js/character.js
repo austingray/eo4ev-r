@@ -89,8 +89,7 @@ CHARACTER.three.init = function() {
   CHARACTER.three.renderer.setClearColor( 0xbfd1e5 );
   CHARACTER.three.renderer.setPixelRatio( window.devicePixelRatio ); 
 
-  //animation mixer
-  CHARACTER.three.mixer = new THREE.AnimationMixer( CHARACTER.three.scene );
+
 }
 CHARACTER.three.updateCamera = function( position ) {
   CHARACTER.three.camera.position.set( position.x, position.y - 2, 1 );
@@ -116,6 +115,29 @@ CHARACTER.models.init = function() {
     loader.load( predefined.file, function(object) {
       var model = object.children[0];
       model.material.skinning = true;
+
+      // texture
+      // http://stackoverflow.com/questions/12368200/displaying-background-colour-through-transparent-png-on-material
+      //var texture = new THREE.Texture( generateTexture( ) ); // texture background is transparent
+      var texture = model.material.map;
+      texture.needsUpdate = true; // important
+      
+      // uniforms
+      var uniforms = {
+          color: { type: "c", value: new THREE.Color( 0xff0000 ) }, // material is "red"
+          texture: { type: "t", value: texture },
+      };
+
+      // material
+      var material = new THREE.ShaderMaterial({
+          uniforms        : uniforms,
+          vertexShader    : document.getElementById( 'vertex_shader' ).textContent,
+          fragmentShader  : document.getElementById( 'fragment_shader' ).textContent
+      });
+
+      model.material = material;
+      //model.material.vertexColors = THREE.FaceColors
+      //
       model.scale.x = predefined.scale;
       model.scale.y = predefined.scale;
       model.scale.z = predefined.scale;
@@ -192,5 +214,6 @@ CHARACTER.map.draw = function() {
   CHARACTER.map.mesh.receiveShadow = true;
   CHARACTER.three.scene.add(CHARACTER.map.mesh);
 }
+
 
 CHARACTER.init();
