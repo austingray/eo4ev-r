@@ -20,9 +20,9 @@ CHARACTER.render = function() {
   //render frame
   CHARACTER.three.renderer.render( CHARACTER.three.scene, CHARACTER.three.camera );
   if (CHARACTER.models.library.hero)
-    CHARACTER.models.library.hero.rotation.y = CHARACTER.models.library.hero.rotation.y + .001;
+    CHARACTER.models.library.hero.rotation.y = CHARACTER.models.library.hero.rotation.y + .005;
   if (CHARACTER.map.mesh)
-    CHARACTER.map.mesh.rotation.z = CHARACTER.map.mesh.rotation.z + .001;
+    CHARACTER.map.mesh.rotation.z = CHARACTER.map.mesh.rotation.z + .005;
   //request next frame
   requestAnimationFrame( CHARACTER.render );
 }
@@ -144,6 +144,8 @@ CHARACTER.models.init = function() {
       model.rotation.x = predefined.rotation_x;
       CHARACTER.models.library[predefined.id] = model;
       CHARACTER.three.scene.add(CHARACTER.models.library.hero);
+      console.log('gonna update the skin');
+      CHARACTER.events.changeRace();
     });
   }
 }
@@ -215,5 +217,70 @@ CHARACTER.map.draw = function() {
   CHARACTER.three.scene.add(CHARACTER.map.mesh);
 }
 
+
+CHARACTER.color = {};
+CHARACTER.color.hsl = {};
+
+CHARACTER.events = {};
+CHARACTER.events.changeRace = function() {
+  var $current = $('#character-race').find(":selected");
+  CHARACTER.events.setupColors($current);
+  CHARACTER.events.showDescriptions();
+}
+CHARACTER.events.setupColors = function($current) {
+  
+  var hue = $current.attr("data-hue");
+  CHARACTER.color.hsl.h = Number(hue);
+  
+  var sat_min = Number($current.attr("data-sat-min")) * 100;
+  var sat_max = Number($current.attr("data-sat-max")) * 100;
+  $('input[name="skin-saturation"]').attr("min", sat_min);
+  $('input[name="skin-saturation"]').attr("max", sat_max);
+  var set_sat_val = (sat_max - sat_min) / 2 + sat_min;
+  $('input[name="skin-saturation"]').val(set_sat_val);
+  CHARACTER.color.hsl.s = set_sat_val / 100;
+
+  var light_min = Number($current.attr("data-light-min")) * 100;
+  var light_max = Number($current.attr("data-light-max")) * 100;
+  $('input[name="skin-lightness"]').attr("min", light_min);
+  $('input[name="skin-lightness"]').attr("max", light_max);
+  var set_light_val = (light_max - light_min) / 2 + light_min;
+  $('input[name="skin-lightness"]').val(set_light_val);
+  CHARACTER.color.hsl.l = set_light_val / 100;
+
+  updateSkin();
+
+}
+
+CHARACTER.events.showDescriptions = function() {
+  
+  var $race_select = $('#character-race').find(":selected");
+  var race = $race_select.text();
+  var raceDesc = $race_select.attr("data-description");
+  var $rEl = $('<div></div>').html('<span>' + race + ':</span>' + raceDesc);
+  
+  var $class_select = $('#character-class').find(":selected");
+  var cClass = $class_select.text();
+  var classDesc = $class_select.attr("data-description");
+  var $cEl = $('<div></div>').html('<span>' + cClass + ':</span>' + classDesc);
+  $('#character-description').html($rEl).append($cEl);
+}
+//handlers
+$('input[type="range"]').on('input change', function() {
+  updateSkin();
+});
+var updateSkin = function() {
+  let h = CHARACTER.color.hsl.h;
+  let s = Number($('input[name="skin-saturation"]').val()) / 100;
+  let l = Number($('input[name="skin-lightness"]').val()) / 100;
+  CHARACTER.models.library.hero.material.uniforms.color.value.setHSL(h, s, l);
+}
+
+$('#character-race').on('change', function() {
+  CHARACTER.events.changeRace();
+});
+$('#character-class').on('change', function() {
+  CHARACTER.events.showDescriptions();
+})
 
 CHARACTER.init();

@@ -8,28 +8,48 @@ block content
       div(class='content-left')
         canvas(id='character')
       div(class='content-right')
-        form(class='form')
+        if flash
+          div(class='error') #{flash}
+        form(class='form', role='form', name='character', method='post', action='/character')
           div(class='row')
             label(for='character-name') Name
             input(type='text', name='character-name', id='character-name')
+          div(class='row col3')
+            div(class='col')
+              label(for='character-sex') Sex
+              select(name='character-sex', id='character-sex')
+                each sex in sexes
+                  option(value=''+sex.id+'') #{sex.name}
+            div(class='col')
+              label(for='character-race') Race
+              select(name='character-races', id='character-race')
+                each race in races
+                  option(value=''+race.id+'', data-hue=''+race.hue+'', data-sat-min=''+race.sat_min+'', data-sat-max=''+race.sat_max+'', data-light-min=''+race.light_min+'', data-light-max=''+race.light_max+'', data-description=''+race.description+'') #{race.name}
+            div(class='col')
+              label(for='character-class') Class
+              select(name='character-class', id='character-class')
+                each cClass in classes
+                  option(value=''+cClass.id+'', data-description=''+cClass.description+'') #{cClass.name}
+            div(class='clear')
+          div(class='row col2')
+            div(class='col')
+              label(for='character-skin') Skin Saturation
+              input(type='range', name="skin-saturation", min="0", max="100")
+            div(class='col')
+              label(for='character-skin') Skin Lightness
+              input(type='range', name="skin-lightness", min="0", max="100")
+            div(class='clear')
           div(class='row')
-            label(for='character-sex') Sex
-            select(name='character-sex', id='character-sex')
-              each sex in sexes
-                option(value=''+sex.id+'') #{sex.name}
-          div(class='row')
-            label(for='character-race') Race
-            select(name='character-races', id='character-race')
-              each race in races
-                option(value=''+race.id+'') #{race.name}
-          div(class='row')
-            label(for='character-class') Class
-            select(name='character-class', id='character-class')
-              each cClass in classes
-                option(value=''+cClass.id+'') #{cClass.name}
+            div(id="character-description")
           div(class='row submit')
             input(type='submit', value='Create')
       div(class='clear')
+
+  script.
+    var CHARACTER = CHARACTER || {};
+    CHARACTER.data = {};
+    CHARACTER.data.races = !{JSON.stringify(races)};
+    CHARACTER.data.classes = !{JSON.stringify(classes)};
 
   script(src='js/character.js')
   

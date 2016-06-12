@@ -80,12 +80,13 @@ router.get('/account', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.render('login', { title: 'Dat three.js doe - Login/Register', flash: req.flash('error') });
   } else {
-    new Characters({ id: req.user.id }).fetch().then(function(model) {
+    new Characters({ id: req.user.id }).fetchAll().then(function(model) {
       if (model === null) {
         var characters = false;
       } else {
         var characters = model.toJSON();
       }
+      console.log(characters);
       res.render('account', { title: 'Dat three.js doe - My Account', user: req.user, characters: characters });
     });
   }
@@ -104,10 +105,97 @@ router.get('/character', function(req, res, next) {
         var races = races_model.toJSON();
         new Classes().fetchAll().then(function(classes_model) {
           var classes = classes_model.toJSON();
-          res.render('character', { title: 'Dat three.js doe - Character Creation', user: req.user, scripts: 'character', sexes: sexes, races: races, classes: classes });
+          res.render('character', { flash: req.flash('error'), title: 'Dat three.js doe - Character Creation', user: req.user, scripts: 'character', sexes: sexes, races: races, classes: classes });
         })
       })
     })
+  }
+});
+
+router.post('/character', function(req, res, next) {
+  if (typeof req.user === 'undefined') {
+    res.redirect('/account');
+  } else {
+    
+    var _name = req.body['character-name'];
+    var allowedRegex = /^[a-zA-Z0-9_]{1,15}$/;
+    var validName = allowedRegex.test(_name);
+    
+    if ( ! validName ) {
+      req.flash('error', 'Invalid character name. Please try a new name.');
+      res.redirect('/character');
+      return;
+    }
+
+    new Characters().query( 'whereRaw', 'LOWER(name) = ?', _name.toLowerCase() ).fetch().then(function(model) {
+      if (null === model) {
+        
+        //fetch race, validate color req.body, save new character
+        var character_race_id = Number( sanitize( req.body['character-races'] ) );
+        new Races({ id: character_race_id }).fetch().then(function(model) {
+          
+          if (model === null) {
+            res.send('Quit screwing around');
+            return;
+          }
+
+          //race data
+          var race = model.toJSON();
+          //hue
+          var hue = race.hue;
+          //saturation
+          var sat_min = race.sat_min;
+          var sat_max = race.sat_max;
+          var sat = Number( sanitize( req.body['skin-saturation'] ) ) / 100;
+          if (sat < sat_min || sat > sat_max) {
+            sat = (sat_max - sat_min) / 2 + sat_min;
+          }
+          //lightness
+          var light_min = race.light_min;
+          var light_max = race.light_max;
+          var light = Number( sanitize( req.body['skin-lightness'] ) ) / 100;
+          if (light < light_min || light > light_max) {
+            light = (light_max - light_min) / 2 + light_min;
+          }
+
+          //fetch sex
+          var character_sex_id = Number( sanitize( req.body['character-sex'] ) );
+          new Sexes({ id: character_sex_id }).fetch().then(function(model) {
+
+            if (model === null) {
+              res.send("Quit screwing around!");
+              return;
+            }
+
+            var character_class_id = Number( sanitize( req.body['character-class'] ) );
+            new Classes({ id: character_class_id }).fetch().then(function(model) {
+
+              if (model === null) {
+                res.send("Quit screwing around!!!");
+                return;
+              }
+
+              new Characters({ user_id: req.user.id, position: JSON.stringify({x: 0, y: 0, z: 0}), name: _name, sex: character_sex_id, race: character_race_id, hue: hue, saturation: sat, lightness: light, class: character_class_id })
+              .save()
+              .then(function(model) {
+
+                res.redirect('/account');
+
+              });
+
+            });
+
+          });
+
+        })
+
+      } else {
+        req.flash('error', 'Character name already in use. Please try a new name.');
+        res.redirect('/character');
+        return;
+      }
+    });
+
   }
 });
 

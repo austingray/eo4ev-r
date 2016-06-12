@@ -23,6 +23,9 @@ exports.up = function(knex, Promise) {
       table.string("name").notNullable().unique();
       table.integer("sex").notNullable().references("id").inTable("sexes");
       table.integer("race").notNullable().references("id").inTable("races");
+      table.decimal("hue").notNullable();
+      table.decimal("saturation").notNullable();
+      table.decimal("lightness").notNullable();
       table.integer("class").notNullable().references("id").inTable("classes");
       table.integer("experience").notNullable().defaultTo(0);
       table.integer("level").notNullable().defaultTo(0);
@@ -43,17 +46,24 @@ exports.up = function(knex, Promise) {
 
     knex.schema.createTable("sexes", function (table) {
       table.increments().primary();
-      table.string("name")
+      table.string("name");
     }),
 
     knex.schema.createTable("races", function (table) {
       table.increments().primary();
       table.string("name");
+      table.text("description");
+      table.decimal("hue");
+      table.decimal("sat_min");
+      table.decimal("sat_max");
+      table.decimal("light_min");
+      table.decimal("light_max");
     }),
 
     knex.schema.createTable("classes", function (table) {
       table.increments().primary();
       table.string("name");
+      table.text("description");
     }),
 
     knex.schema.createTable("posts", function (table) {

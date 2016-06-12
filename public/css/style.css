@@ -181,6 +181,20 @@ form.form .row.submit input {
   cursor:pointer;
   -webkit-appearance:none;
 }
+form.form .row.col3 .col {
+  width:33.33333333333%;
+  float:left;
+  padding-left:0px;
+  padding-right:4px;
+}
+form.form .row.col3 .col + .col {
+  padding-left:2px;
+  padding-right:2px;
+}
+form.form .row.col3 .col + .col + .col {
+  padding-left:4px;
+  padding-right:0px;
+}
 
 .clear {
   clear:both;
@@ -198,4 +212,15 @@ canvas#character {
   width:500px;
   height:400px;
   float:right;
+}
+#character-description div {
+  margin-top:12px;
+}
+
+#character-description span {
+  font-size:16px;
+  font-weight:bold;
+  display:inline-block;
+  margin-right:7px;
+  color:#be862f;
 }
