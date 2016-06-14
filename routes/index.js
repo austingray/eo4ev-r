@@ -19,7 +19,6 @@ var Posts = require('../db/posts.js');
 ///////////////
 router.get('/', function(req, res, next) {
   new Posts().fetchAll({withRelated: ['user']}).then(function(posts) {
-    console.log(posts.toJSON());
     res.render('home', { title: 'Welcome to the homepage for EO4Ev-r', user: req.user, posts: posts.toJSON() });
   });
 });
@@ -49,7 +48,6 @@ router.post('/datadmindoe', function(req, res, next) {
       var user = model.toJSON();
       if (user.access === 10) {
         //passes validation, handle it
-        console.log(req.body);
         new Posts({ user_id: req.user.id, post_title: sanitize(req.body.post_title), post_content: sanitize(req.body.post_content) }).save().then(function(model) {
           res.redirect('/');
         });
@@ -80,17 +78,43 @@ router.get('/account', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.render('login', { title: 'Dat three.js doe - Login/Register', flash: req.flash('error') });
   } else {
-    new Characters({ id: req.user.id }).fetchAll().then(function(model) {
+    new Characters({ id: req.user.id }).fetchAll({ withRelated: [ 'race', 'class', 'sex' ] }).then(function(model) {
       if (model === null) {
         var characters = false;
       } else {
         var characters = model.toJSON();
       }
-      console.log(characters);
-      res.render('account', { title: 'Dat three.js doe - My Account', user: req.user, characters: characters });
+      new Users({ id: req.user.id }).fetch({ withRelated: ['current_character'] }).then(function(model) {
+        user_model = model.toJSON();
+        res.render('account', { title: 'Dat three.js doe - My Account', user: user_model, characters: characters, scripts: 'character' });
+      });
     });
   }
 });
+
+////////////////////////
+// select a character //
+////////////////////////
+router.post('/account', function(req, res, next) {
+  if (typeof req.user === 'undefined') {
+    res.redirect('/account');
+  } else {
+
+    var char_id = Number( sanitize( req.body['current-character'] ) );
+    new Characters({ id: char_id, user_id: req.user.id }).fetch().then(function(model) {
+      
+      if (model === null) {
+        res.send('oh buggar off');
+        return;
+      }
+
+      new Users({ id: req.user.id }).save({ current_character: char_id }, { patch: true }).then(function(model) {
+        res.redirect('/account');
+      })
+
+    })
+  }
+})
 
 ////////////////////////
 // create a character //
@@ -199,6 +223,54 @@ router.post('/character', function(req, res, next) {
   }
 });
 
+router.get('/character/delete', function(req, res, next) {
+  if (typeof req.user === 'undefined') {
+    res.redirect('/account');
+    return;
+  } else {
+    new Users({ id: req.user.id }).fetch({ withRelated: ['current_character'] }).then(function(model) {
+      user_model = model.toJSON();
+      new Characters({ id: user_model.current_character.id }).fetch({ withRelated: [ 'sex', 'race', 'class' ] }).then(function(model) {
+        var delete_char = model.toJSON();
+        res.render('delete', { title: 'Dat three.js doe - Delete Character', user: req.user, character: delete_char });
+      });
+    });
+  }
+});
+
+router.post('/character/delete', function(req, res, next) {
+  
+  if (typeof req.user === 'undefined') {
+    res.send('fuck off');
+    return;
+  } else {
+    var delRequest = sanitize( req.body.delete );
+    if (delRequest === "true") {
+      var delId = sanitize( req.body.character_id );
+      console.log(delId);
+      new Characters({ id: delId, user_id: req.user.id }).fetch().then(function(model) {
+        
+        if (model === null) {
+          res.redirect('/account');
+          return;
+        }
+
+        new Users({ id: req.user.id }).save({ current_character: null }, { patch: true }).then(function(model){
+
+          new Characters({ id: delId }).destroy().then(function(model) {
+            console.log('deleted');
+            res.redirect('/account');
+          });
+          
+        });
+
+      });
+    } else {
+      res.redirect('/account');
+    }
+  }
+
+});
 
 //////////////////////////////////
 // account registrations action //

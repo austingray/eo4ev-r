@@ -29,10 +29,8 @@ html
       div(id='logo')
         a(href='/') Eo Forever
       if (user)
-        a(class='menu-item', href='/account') Logged in as #{user.username} |
-        a(class='menu-item', href='/play') Play
+        a(class='menu-item', href='/account') Logged in as #{user.username} | My Account
       else
         a(class='menu-item', href='/account') Login
-        a(class='menu-item', href='/account') | Create an Account
     div(id='container')
       block content

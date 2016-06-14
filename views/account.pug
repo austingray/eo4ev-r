@@ -5,14 +5,104 @@ block content
     h1 #{user.username}
 
     div(class='characters')
-      h3 Your Characters
 
-      if characters
-        each char in characters
-          div(class='character')
-            span(class='character-name') #{char.name}
-      else
-        div(class='message') You haven't created any characters yet.
+      div(class='content-left')
+        h3 Your Characters
+        if characters
+          form(class='character-select', role='form', name='active-character', method='post')
+            each char in characters
+              - var checked = ((user.current_character !== null && user.current_character.id === char.id) ? ' checked' : '')
+              div(class='character'+checked)
+                label
+                  if checked === ' checked'
+                    input(type='radio', name='current-character', value=char.id, checked)
+                  else
+                    input(type='radio', name='current-character', value=char.id)
+                  div(class='character-name') #{char.name}
+                  div(class='character-detail')
+                    span #{char.class.name} - Level #{char.level}
+        else
+          div(class='message') You haven't created any characters yet.
 
-      p
-        a(class='button', href='/character') Create a new character
+        p
+          a(class='button', href='/character') Create a new character
+
+      div(class='content-right')
+        if user.current_character !== null
+          canvas(id='character')
+          div(class='clear')
+            h2
+              a(href='/play') Play as #{user.current_character.name}
+            a(href="/character/delete") Delete #{user.current_character.name}
+
+          script.
+            var CHARACTER = {};
+            CHARACTER.color = {};
+            CHARACTER.color.hsl = {};
+            CHARACTER.color.hsl.h = #{user.current_character.hue};
+            CHARACTER.color.hsl.s = #{user.current_character.saturation};
+            CHARACTER.color.hsl.l = #{user.current_character.lightness};
+
+          script(src='/js/view_character.js')
+
+          script(id="vertex_shader", type="x-shader/x-vertex").
+
+            varying vec2 vUv;
+
+            void main() {
+
+              vUv = uv;
+              
+              gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+            
+            }
+
+          script(id="fragment_shader", type="x-shader/x-fragment").
+
+            uniform vec3 color;
+            uniform sampler2D texture;
+
+            varying vec2 vUv;
+
+            void main() {
+
+              vec4 tColor = texture2D( texture, vUv );
+            
+              gl_FragColor = vec4( mix( color, tColor.rgb, tColor.a ), 1.0 );
+            
+            }
+              
+          script.
+
+            var stats = new Stats();
+            stats.setMode( 1 ); // 0: fps, 1: ms, 2: mb
+
+            // align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            document.body.appendChild( stats.domElement );
+
+            var update = function () {
+
+                stats.begin();
+
+                // monitored code goes here
+
+                stats.end();
+
+                requestAnimationFrame( update );
+
+            };
+
+            requestAnimationFrame( update );
+        else
+          div No character currently selected
+
+      script.
+        $('input[type="radio"]').on('change', function() {
+          $('form.character-select').submit();
+        })
+
+      div(class='clear')

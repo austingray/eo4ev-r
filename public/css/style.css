@@ -203,8 +203,8 @@ form.form .row.col3 .col + .col + .col {
 /*
  * Character Creation
  */
-#create-character .content-left,
-#create-character .content-right {
+.content-left,
+.content-right {
   width:50%;
   float:left;
 }
@@ -212,6 +212,9 @@ canvas#character {
   width:500px;
   height:400px;
   float:right;
+}
+.characters canvas#character {
+  float:left;
 }
 #character-description div {
   margin-top:12px;

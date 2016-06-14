@@ -1,0 +1,18 @@
+extends layout.pug
+
+block content
+  div(class='content')
+    h1 Delete Character
+
+    p Are you sure you want to delete the following character? (This cannot be undone):
+
+    p #{character.name} <br> Level #{character.level} #{character.class.name}
+
+    p
+      form(class='character-delete', role='form', name='delete-character', method='post')
+        input(type='hidden', name='character_id', value=character.id)
+        input(type='hidden', name='delete', value='true')
+        input(type='submit', value='Yes, delete this mofo')
+      form(class='character-delete', role='form', name='delete-character', method='post')
+        input(type='hidden', name='delete', value='false')
+        input(type='submit', value='Naw, I might need em yet...')
