@@ -258,7 +258,14 @@ EO.world.updateObject = function(object) {
 		}
 	}
 	if (typeof objectData !== 'undefined') {
+		//color
+		if (object.colorUpdated !== true) {
+			object.material.uniforms.color.value.setHSL( objectData.hsl.h, objectData.hsl.s, objectData.hsl.l );
+			object.colorUpdated = true;
+		}
+		//position
 		object.position.set( objectData.view.pos.x, objectData.view.pos.y, objectData.view.pos.z );
+		//rotation
 		object.rotation.y = objectData.view.rot;
 		if (objectData.view.walking) {
 			EO.world.objects.active[objectData.name].animations.walk.play();
@@ -296,6 +303,7 @@ EO.models.init = function() {
 			if (predefined.id === 'hero') {
 				
 				var texture = model.material.map;
+				EO.globalTexture = model.material.map;
 	      texture.needsUpdate = true; // important
 	      
 	      // uniforms
@@ -334,6 +342,37 @@ EO.models.addToWorld = function(model_id, name) {
 
 	var model = {};
 	model.mesh = EO.models.library[model_id].clone(true);
+
+	//textures
+	var texture = EO.globalTexture;
+	// uniforms
+	      var uniforms = {
+	        color: { type: "c", value: new THREE.Color( 0xff0000 ) }, // material is "red"
+	        texture: { type: "t", value: texture },
+	      };
+
+	      // material
+	      var material = new THREE.ShaderMaterial({
+	          uniforms        : uniforms,
+	          vertexShader    : document.getElementById( 'vertex_shader' ).textContent,
+	          fragmentShader  : document.getElementById( 'fragment_shader' ).textContent
+	      });
+
+	      var geometry = EO.models.library[model_id].geometry;
+
+	      var skinMesh = new THREE.SkinnedMesh( geometry, material );
+
+	      //model.material = material;
+	      skinMesh.material.skinning = true;
+	      //model.material._needsUpdate = true;
+			
+				skinMesh.scale.x = EO.models.library[model_id].scale.x;
+				skinMesh.scale.y = EO.models.library[model_id].scale.y;
+				skinMesh.scale.z = EO.models.library[model_id].scale.z;
+				skinMesh.rotation.x = EO.models.library[model_id].rotation.x;
+
+	model.mesh = skinMesh;
+	//model.mesh.material = material;
 	model.mesh.name = name;
 	model.animations = {};
 	model.animations.walk = EO.three.mixer.clipAction( model.mesh.geometry.animations[0], model.mesh );

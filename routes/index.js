@@ -78,17 +78,12 @@ router.get('/account', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.render('login', { title: 'Dat three.js doe - Login/Register', flash: req.flash('error') });
   } else {
-    new Characters({ id: req.user.id }).fetchAll({ withRelated: [ 'race', 'class', 'sex' ] }).then(function(model) {
-      if (model === null) {
-        var characters = false;
-      } else {
-        var characters = model.toJSON();
-      }
-      new Users({ id: req.user.id }).fetch({ withRelated: ['current_character'] }).then(function(model) {
-        user_model = model.toJSON();
-        res.render('account', { title: 'Dat three.js doe - My Account', user: user_model, characters: characters, scripts: 'character' });
-      });
+
+    new Users({ id: req.user.id }).fetch({ withRelated: ['characters.sex', 'characters.class', 'characters.race', 'current_character'] }).then(function(model) {
+      user_model = model.toJSON();
+      res.render('account', { title: 'Dat three.js doe - My Account', user: user_model, characters: user_model.characters, scripts: 'character' });
     });
+
   }
 });
 

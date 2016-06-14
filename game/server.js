@@ -11,20 +11,39 @@
  * 
  */
 
+var Characters = require('../db/characters.js');
+
 var SERVER = {};
 
 //////////////////////
 // database methods //
 //////////////////////
 SERVER.db = {};
-SERVER.db.fetchUser = function(socket_id) {
-  var user = {};
-  user.name = 'Guest'+Math.floor(Math.random() * 100000);
-  user.view = {};
-  user.view.pos = {x:0, y:0, z:0};
-  user.view.rot = 0;
-  user.view.walking = false;
-  return user;
+SERVER.db.fetchUser = function(socket, callback) {
+  new Characters({ id: socket.request.user.current_character }).fetch().then(function(model) {
+
+    if (model === null) {
+      console.log('user logged in to game with character that does not exist!!!!');
+      return false;
+    }
+
+    console.log(model.toJSON());
+    var user_data = model.toJSON();
+
+    var user = {};
+    user.name = user_data.name;
+    user.hsl = {};
+    user.hsl.h = user_data.hue;
+    user.hsl.s = user_data.saturation;
+    user.hsl.l = user_data.lightness;
+    user.view = {};
+    user.view.pos = user_data.position;
+    user.view.rot = 0;
+    user.view.walking = false;
+
+    callback(user);
+
+  });
 }
 
 ////////////////////////////////////////
@@ -33,10 +52,15 @@ SERVER.db.fetchUser = function(socket_id) {
 SERVER.players = {};
 SERVER.players.data = {};
 SERVER.players.index = [];
-SERVER.players.create = function(socket_id) {
-  var user = SERVER.db.fetchUser(socket_id);
-  this.index.push(socket_id);
-  this.data[socket_id] = user;
+SERVER.players.create = function(socket, callback) {
+  SERVER.db.fetchUser(socket, function(user) {
+    
+    SERVER.players.index.push(socket.id);
+    SERVER.players.data[socket.id] = user;
+
+    callback();
+
+  });
 }
 SERVER.players.delete = function() {
 
@@ -132,36 +156,38 @@ SERVER.view.mapView = function(socket_id) {
 /////////////////////////////////////
 SERVER.socket = function(data) {
 
+  //io
   const io = data.io;
+  //session
   const io_session = data.io_session;
-
   io.use(io_session);
-
-  //socket.io connection handler
+  //connection handler
   io.on('connection', function (socket) {
 
     console.log(socket.request.user);
 
-    io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
-
     //init connection
-    SERVER.players.create(socket.id);
-    //emit 'join' tells client to EO.init();
-    socket.emit('join');
-    //join unique channel
-    socket.join(SERVER.players.data[socket.id].name);
-    //send MotD
-    socket.emit( 'news', { message: 'Welcome to EO!' });
-    //announce new user
-    socket.broadcast.emit(SERVER.players.data[socket.id].name + ' has joined the room!');
-    //chat handler
-    socket.on('chat', function (data) {
-      io.emit('chat', { user: socket.request.user.username, message: data.message });
-    });
+    SERVER.players.create(socket, function() {
+      //player logged in message
+      io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
+      //emit 'join' tells client to EO.init();
+      socket.emit('join');
+      //join unique channel
+      socket.join(SERVER.players.data[socket.id].name);
+      //send MotD
+      socket.emit( 'news', { message: 'Welcome to EO!' });
+      //announce new user
+      socket.broadcast.emit(SERVER.players.data[socket.id].name + ' has joined the room!');
+      //chat handler
+      socket.on('chat', function (data) {
+        io.emit('chat', { user: socket.request.user.username, message: data.message });
+      });
 
-    //input handler
-    socket.on('input', function (data) {
-      SERVER.players.updatePlayer(socket.id, data);
+      //input handler
+      socket.on('input', function (data) {
+        SERVER.players.updatePlayer(socket.id, data);
+      });
+
     });
 
     //disconnect handler

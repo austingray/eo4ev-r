@@ -96,8 +96,13 @@ passport.use(new LocalStrategy(
     new Users({ username: username }).fetch().then(function(model) {
       if (model === null) return done(null, false, { message: 'Incorrect username.' });
       bcrypt.compare(password, model.attributes.hash, function(err, res) {
+        console.log(model.attributes.hash);
         if (err) return done(err);
-        return done(null, model.toJSON());
+        if (res) {
+          return done(null, model.toJSON());
+        } else {
+          return done(null, false, { message: 'Incorrect password.' });
+        }
       });
     });
   }
