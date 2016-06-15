@@ -11,7 +11,10 @@
  * 
  */
 
+var Promise = require('bluebird');
+
 var Characters = require('../db/characters.js');
+var Maps = require('../db/maps.js');
 
 var SERVER = {};
 
@@ -27,7 +30,6 @@ SERVER.db.fetchUser = function(socket, callback) {
       return false;
     }
 
-    console.log(model.toJSON());
     var user_data = model.toJSON();
 
     var user = {};
@@ -44,6 +46,28 @@ SERVER.db.fetchUser = function(socket, callback) {
     callback(user);
 
   });
+}
+
+SERVER.db.FetchMapChunk = function(chunkArray, callback) {
+
+  var total = chunkArray.length;
+  var chunkData = [];
+
+  while (chunkArray.length > 0) {
+    var singleMapTile = chunkArray.shift();
+    new Maps({ x: singleMapTile.x, y: singleMapTile.y }).fetch({ withRelated: ['tile'] }).then(function(model) {
+      if (model === null) {
+        singleMapTile.name = "blank";
+        chunkData.push(singleMapTile);
+      } else {
+        chunkData.push(model.toJSON());
+      }
+      if (chunkData.length === total) {
+        callback(chunkData);
+      }
+    });
+  }
+
 }
 
 ////////////////////////////////////////
@@ -120,15 +144,20 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
 //////////////////////////////////////////////////////////
 SERVER.view = {};
 SERVER.view.localView = function(socket_id) {
-  localView = {};
-  localView.players = this.playerView(socket_id);
-  localView.maps = this.mapView(socket_id);
-  return localView;
-}
-SERVER.view.playerView = function(socket_id) {
 
+  //check current users position
   var player = SERVER.players.data[socket_id];
   if (typeof player === 'undefined') return false;
+  
+  //do dat local view
+  localView = {};
+  localView.players = this.playerView(player);
+  localView.maps = this.mapView(player);
+
+  return localView;
+
+}
+SERVER.view.playerView = function(player) {
 
   var playerView = [];
   for (var i = 0; i < SERVER.players.index.length; i++) {
@@ -147,8 +176,11 @@ SERVER.view.playerView = function(socket_id) {
   return playerView;
 
 }
-SERVER.view.mapView = function(socket_id) {
-  return false;
+SERVER.view.mapView = function(player) {
+
+  return player.view.pos;
+
+  //return false;
 }
 
 /////////////////////////////////////
@@ -168,30 +200,44 @@ SERVER.socket = function(data) {
 
     //init connection
     SERVER.players.create(socket, function() {
-      //player logged in message
-      io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
-      //emit 'join' tells client to EO.init();
-      socket.emit('join');
-      //join unique channel
-      socket.join(SERVER.players.data[socket.id].name);
-      //send MotD
-      socket.emit( 'news', { message: 'Welcome to EO!' });
-      //announce new user
-      socket.broadcast.emit(SERVER.players.data[socket.id].name + ' has joined the room!');
-      //chat handler
-      socket.on('chat', function (data) {
-        io.emit('chat', { user: socket.request.user.username, message: data.message });
-      });
 
-      //input handler
-      socket.on('input', function (data) {
-        SERVER.players.updatePlayer(socket.id, data);
+      //send join notice plus first chunk
+      SERVER.map.SendChunk(socket, function (chunkData) {
+        //emit 'join' tells client to EO.init();
+        socket.emit('join', { chunk: chunkData });
+        //player logged in message
+        io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
+        //join unique channel
+        socket.join(SERVER.players.data[socket.id].name);
+        //send MotD
+        socket.emit( 'news', { message: 'Welcome to EO!' });
+        //announce new user
+        socket.broadcast.emit(SERVER.players.data[socket.id].name + ' has joined the room!');
+        //chat handler
+        socket.on('chat', function (data) {
+          io.emit('chat', { user: socket.request.user.username, message: data.message });
+        });
+        //input handler
+        socket.on('input', function (data) {
+          SERVER.players.updatePlayer(socket.id, data);
+        });
+
+
+        //test
+        setInterval(function() {
+          SERVER.map.SendChunk(socket, function(chunkData) {
+            io.sockets.in( SERVER.players.data[socket.id].name ).emit( 'chunk' , { chunk: chunkData } );
+          })
+        }, 5000);
       });
 
     });
 
     //disconnect handler
     socket.on('disconnect', function () {
+
+      //TODO: save users state to the database
+
       io.emit('news', { message: socket.request.user.username + ' has returned to the mundane world.' } );
       var index = SERVER.players.index.indexOf(socket.id);
       if (index > -1) {
@@ -214,6 +260,54 @@ SERVER.socket = function(data) {
 
 }
 
+SERVER.map = {};
+
+SERVER.map.chunk = {};
+SERVER.map.chunk.size = 20; //20 tiles x 20 tiles
+
+SERVER.map.ChunkArrayFromCenterTileCoords = function (coords) {
+  
+  var chunkArray = [];
+
+  var offset = SERVER.map.chunk.size / 2;
+  var start_x = coords.x - offset;
+  var start_y = coords.y - offset;
+
+  for (var i = 0; i < SERVER.map.chunk.size; i++) {
+    for (var j = 0; j < SERVER.map.chunk.size; j++) {
+      chunkArray.push({
+        x: start_x + i,
+        y: start_y + j
+      });
+    }
+  }
+
+  return chunkArray;
+
+}
+
+SERVER.map.SendChunk = function(socket, callback) {
+
+  var player = SERVER.players.data[socket.id];
+  if (typeof player === 'undefined') return false;
+
+  //calculate current tile is player.pos.x, player.pos.y / 64
+  var coords = {
+    x: Math.floor(player.view.pos.x / 64),
+    y: Math.floor(player.view.pos.y / 64)
+  };
+
+  var chunkArray = SERVER.map.ChunkArrayFromCenterTileCoords(coords);
+
+  var chunkData = SERVER.db.FetchMapChunk(chunkArray, function(chunkData) {
+
+    callback(chunkData);
+
+  });
+
+};
+
+
 
 //um, ok
 var sendMapChunk = function(socket_id) {
@@ -224,9 +318,6 @@ var sendMapChunk = function(socket_id) {
   }
 
   var mapOffset = {x:0, y:0, z:0};
-  if (typeof user.view != 'undefined') {
-    var mapOffset = user.view.pos;
-  }
 
   var currentTile = {
     x: Math.floor((GAME.map.width / 2) + (localArray.offset.x / 64)),
@@ -254,7 +345,6 @@ GAME.map.init = function() {
   this.tile.init();
   this.generate();
   //this.draw();
-  //console.log(this.array);
 }
 GAME.map.generate = function() {
   this.array = [];

@@ -7,7 +7,7 @@
 6 silly lifecycle eo4evr@1.0.0~prestart: no script for prestart, continuing
 7 info lifecycle eo4evr@1.0.0~start: eo4evr@1.0.0
 8 verbose lifecycle eo4evr@1.0.0~start: unsafe-perm in lifecycle true
-9 verbose lifecycle eo4evr@1.0.0~start: PATH: /usr/local/lib/node_modules/npm/bin/node-gyp-bin:/Users/austingray/Desktop/projects/eo4evr/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/3.4/bin:/Library/Frameworks/Python.framework/Versions/3.4/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Postgres.app/Contents/Versions/9.4/bin:/Applications/Postgres.app/Contents/Versions/9.4/bin
+9 verbose lifecycle eo4evr@1.0.0~start: PATH: /usr/local/lib/node_modules/npm/bin/node-gyp-bin:/Users/austingray/Desktop/projects/eo4evr/node_modules/.bin:/Library/Frameworks/Python.framework/Versions/3.4/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Postgres.app/Contents/Versions/9.4/bin
 10 verbose lifecycle eo4evr@1.0.0~start: CWD: /Users/austingray/Desktop/projects/eo4evr
 11 silly lifecycle eo4evr@1.0.0~start: Args: [ '-c', 'node app' ]
 12 silly lifecycle eo4evr@1.0.0~start: Returned: code: 1  signal: null

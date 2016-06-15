@@ -18,7 +18,9 @@ var Posts = require('../db/posts.js');
 // Home page //
 ///////////////
 router.get('/', function(req, res, next) {
-  new Posts().fetchAll({withRelated: ['user']}).then(function(posts) {
+  new Posts().query(function(qb){
+    qb.orderBy('created_at','DESC'); 
+  }).fetchAll({withRelated: ['user']}).then(function(posts) {
     res.render('home', { title: 'Welcome to the homepage for EO4Ev-r', user: req.user, posts: posts.toJSON() });
   });
 });

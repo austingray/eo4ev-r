@@ -424,6 +424,8 @@ EO.input.keyboard.update = function() {
 	EO.server.socket.emit('input', input_arr);
 }
 
+EO.input.mouse = {};
+
 ///////////
 // Tiles //
 ///////////
@@ -472,28 +474,31 @@ EO.map = {};
 EO.map.width = 1280;
 EO.map.height = 1280;
 EO.map.tilesPer = 20;
-EO.map.geometry = new THREE.PlaneGeometry(EO.map.width, EO.map.height, EO.map.tilesPer, EO.map.tilesPer);
-var l = EO.map.geometry.faces.length / 2;
-for (var i=0; i < l; i++) {
-	var j  = 2 * i;
-	var rand = Math.random();
-	EO.map.geometry.faces[j].materialIndex = 0.4 > rand ? 1 : 0;
-	EO.map.geometry.faces[j+1].materialIndex = 0.4 > rand ? 1 : 0;
-}
-EO.map.geometry.sortFacesByMaterialIndex();
+//EO.map.geometry = new THREE.PlaneGeometry(EO.map.width, EO.map.height, EO.map.tilesPer, EO.map.tilesPer);
+//var l = EO.map.geometry.faces.length / 2;
+// for (var i=0; i < l; i++) {
+// 	var j  = 2 * i;
+// 	var rand = Math.random();
+// 	EO.map.geometry.faces[j].materialIndex = 0.4 > rand ? 1 : 0;
+// 	EO.map.geometry.faces[j+1].materialIndex = 0.4 > rand ? 1 : 0;
+// }
+// EO.map.geometry.sortFacesByMaterialIndex();
 
 EO.map.init = function() {
-	this.width = 14;
-	this.height = 14;
-	EO.map.draw();
+	//this.width = 14;
+	//this.height = 14;
+	//EO.map.draw();
+	//
+	//
+	//setup the first map chunk geometry
 }
 EO.map.chunk = function() {
 	
 }
 EO.map.draw = function() {
-	EO.map.mesh = new THREE.Mesh(EO.map.geometry, new THREE.MeshFaceMaterial(EO.tiles.materials));
-	EO.map.mesh.receiveShadow = true;
-	EO.three.scene.add(EO.map.mesh);
+	//EO.map.mesh = new THREE.Mesh(EO.map.geometry, new THREE.MeshFaceMaterial(EO.tiles.materials));
+	//EO.map.mesh.receiveShadow = true;
+	//EO.three.scene.add(EO.map.mesh);
 }
 EO.map.update = function() {
 
@@ -543,6 +548,7 @@ EO.server.socket.on('chat', function (data) {
 });
 
 EO.server.socket.on('join', function(data) {
+	console.log(data);
 	EO.init();
 });
 
@@ -554,6 +560,10 @@ EO.server.socket.on('disconnect', function(data) {
 	var user = data.name;
 	EO.three.dumpster.push(user);
 });
+
+EO.server.socket.on('chunk', function(data) {
+	console.log(data);
+})
 
 EO.server.isServerObject = function(object) {
 	var objects = EO.server.data.localView.players;
