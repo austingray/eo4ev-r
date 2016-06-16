@@ -432,9 +432,10 @@ EO.input.mouse = {};
 ///	stores all map tile data, we'll access this from the map, maybe we nest this under map? i dunno yet
 EO.tiles = {};
 EO.tiles.textures = [
-	{ type:'grass', name: 'Grass 1', file:'img/tiles/grass/grass1.png', animated: false },
-	{ type:'water', name: 'Water 1', file:'img/tiles/water/water1.png', animated: true, frames: 4 },
-	{ type:'water', name: 'Water 2', file:'img/tiles/water/water1.png', animated: true, frames: 4 }
+	{ id: 0, type:'blank', name: 'blank' },
+	{ id: 1, type:'grass', name: 'Grass 1', file:'img/tiles/grass/grass1.png', animated: false },
+	{ id: 2, type:'water', name: 'Water 1', file:'img/tiles/water/water1.png', animated: true, frames: 4 },
+	{ id: 3, type:'water', name: 'Water 2', file:'img/tiles/water/water1.png', animated: true, frames: 4 }
 ];
 EO.tiles.type = {};
 EO.tiles.type.grass = [];
@@ -443,26 +444,24 @@ EO.tiles.materials = [];
 EO.tiles.init = function() {
 	
 	for (var i = 0; i < EO.tiles.textures.length; i++) {
-		var texture = EO.tiles.textures[i];
-		var tLoader = new THREE.TextureLoader();
-		var t = tLoader.load( texture.file );
 		
-		t.repeat.set(EO.map.tilesPer , EO.map.tilesPer);
-		if (texture.animated) {
-			t.wrapS = t.wrapT = THREE.RepeatWrapping;//THREE.RepeatWrapping;
-			t.repeat.set( EO.map.tilesPer, EO.map.tilesPer );
+		var texture = EO.tiles.textures[i];
+		if (typeof texture.file === 'undefined') {
+
+			var material = new THREE.MeshPhongMaterial( { color: 0xffff00 } );
+			var geometry = new THREE.PlaneGeometry( 64, 64, 1 );
 
 		} else {
-			t.wrapS = t.wrapT = THREE.RepeatWrapping;
+
+			var tLoader = new THREE.TextureLoader();
+			var t = tLoader.load( texture.file );
+			var material = new THREE.MeshPhongMaterial({ map: t });
+			var geometry = new THREE.PlaneGeometry( 64, 64, 1 );
+
 		}
-		//t.needsUpdate = true;
-		//t.image.width = 32;
-		var mesh = new THREE.MeshPhongMaterial({ map: t });
-		//mesh.map.image.width = 32;
-		//var mesh = new THREE.MeshBasicMaterial({ map: t });
-		mesh.receiveShadow = true;
-		EO.tiles.type[texture.type].push(mesh);
-		EO.tiles.materials.push(mesh);
+
+		EO.tiles.materials.push(material);
+
 	}
 
 }
@@ -474,57 +473,52 @@ EO.map = {};
 EO.map.width = 1280;
 EO.map.height = 1280;
 EO.map.tilesPer = 20;
-//EO.map.geometry = new THREE.PlaneGeometry(EO.map.width, EO.map.height, EO.map.tilesPer, EO.map.tilesPer);
-//var l = EO.map.geometry.faces.length / 2;
-// for (var i=0; i < l; i++) {
-// 	var j  = 2 * i;
-// 	var rand = Math.random();
-// 	EO.map.geometry.faces[j].materialIndex = 0.4 > rand ? 1 : 0;
-// 	EO.map.geometry.faces[j+1].materialIndex = 0.4 > rand ? 1 : 0;
-// }
-// EO.map.geometry.sortFacesByMaterialIndex();
 
 EO.map.init = function() {
-	//this.width = 14;
-	//this.height = 14;
-	//EO.map.draw();
-	//
-	//
-	//setup the first map chunk geometry
+
 }
 EO.map.chunk = function() {
 	
 }
 EO.map.draw = function() {
-	//EO.map.mesh = new THREE.Mesh(EO.map.geometry, new THREE.MeshFaceMaterial(EO.tiles.materials));
-	//EO.map.mesh.receiveShadow = true;
-	//EO.three.scene.add(EO.map.mesh);
+
 }
 EO.map.update = function() {
 
-	var serverMapToFace = [];
+}
+EO.map.HandleChunk = function(chunk) {
+	
+	var chunkGeometry = new THREE.Geometry();
 
-	var localView = EO.server.data.localView;
-	if (typeof localView === 'undefined') {
-		return false;
-	}
-	for (var i = 0; i < localView.map.length; i++) {
-		for (var j = 0; j < localView.map[i].length; j++) {
-			var tile = localView.map[i][j];
-			serverMapToFace.push(tile);
-		}
-	}
+	for (var i = 0; i < chunk.length; i++) {
 
-	var l = EO.map.geometry.faces.length / 2;
-	for (var i=0; i < l; i++) {
-		var j  = 2 * i;
-		var tileVal = 1;
-		if (serverMapToFace[i].material === "water") var tileVal = 0;
-		if (serverMapToFace[i].material === "grass") var tileVal = 1;
-		EO.map.geometry.faces[j].materialIndex = tileVal;
-		EO.map.geometry.faces[j+1].materialIndex = tileVal;
+		var height = 64 * chunk[i].height;
+		if (height === 0) height = 1;
+
+		var geometry = new THREE.PlaneGeometry( 64, 64 );
+		var material = EO.tiles.materials[chunk[i].tile_id].clone(true);
+		var mesh = new THREE.Mesh( geometry, material );
+		mesh.receiveShadow = true;
+		mesh.position.set( chunk[i].x * 64, chunk[i].y * 64, 0 );
+		mesh.updateMatrix();
+
+		chunkGeometry.merge(mesh.geometry, mesh.matrix, chunk[i].tile_id);
+
 	}
 
+	//var materials = new THREE.MeshPhongMaterial({color: 0x000000});
+	var chunk = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( [ EO.tiles.materials[0], EO.tiles.materials[1] ] ) );
+	chunk.receiveShadow = true;
+	console.log(chunk);
+	chunk.geometry.computeFaceNormals();
+	chunk.geometry.computeVertexNormals();
+	EO.three.scene.add(chunk);
+
+}
+EO.map.DrawTileFromChunkItem = function (chunk_item) {
+	var tile = EO.tiles.materials[chunk_item.name].clone(true);
+	tile.position.set(chunk_item.x, chunk_item.y, 0);
+	EO.three.scene.add(tile);
 }
 
 ////////////////////////
@@ -548,7 +542,7 @@ EO.server.socket.on('chat', function (data) {
 });
 
 EO.server.socket.on('join', function(data) {
-	console.log(data);
+	console.log('firing up the engine');
 	EO.init();
 });
 
@@ -562,7 +556,7 @@ EO.server.socket.on('disconnect', function(data) {
 });
 
 EO.server.socket.on('chunk', function(data) {
-	console.log(data);
+	EO.map.HandleChunk(data.chunk);
 })
 
 EO.server.isServerObject = function(object) {

@@ -48,25 +48,64 @@ SERVER.db.fetchUser = function(socket, callback) {
   });
 }
 
-SERVER.db.FetchMapChunk = function(chunkArray, callback) {
+SERVER.db.FetchMapChunk = function(chunkRect, callback) {
 
-  var total = chunkArray.length;
+  //var total = chunkArray.length;
   var chunkData = [];
 
-  while (chunkArray.length > 0) {
-    var singleMapTile = chunkArray.shift();
-    new Maps({ x: singleMapTile.x, y: singleMapTile.y }).fetch({ withRelated: ['tile'] }).then(function(model) {
-      if (model === null) {
-        singleMapTile.name = "blank";
-        chunkData.push(singleMapTile);
-      } else {
-        chunkData.push(model.toJSON());
+  new Maps().inRectangle({ x: chunkRect.x, y: chunkRect.y, width: chunkRect.width, height: chunkRect.height }).fetchAll().then(function(model) {
+    var results = model.toJSON();
+    if (results.length < SERVER.map.chunk.size*SERVER.map.chunk.size) {
+
+      //patch missing values
+      var patched = [];
+
+      for (var i = 0; i < SERVER.map.chunk.size; i++) {
+        for (var j = 0; j < SERVER.map.chunk.size; j++) {
+
+          var test_x = chunkRect.x + i;
+          var test_y = chunkRect.y + j;
+          var db_tile = {};
+
+          for (k = 0; k < results.length; k++) {
+            var tile_exists_in_db = false;
+            if (results[k].x === test_x && results[k].y === test_y) {
+              tile_exists_in_db = true;
+              db_tile = results[k];
+            }
+          }
+
+          if (tile_exists_in_db) {
+            patched.push(db_tile)
+          } else {
+            patched.push({
+              id: 0,
+              x: test_x,
+              y: test_y,
+              height: 0,
+              blocking: false,
+              tile_id: 0
+            });
+          }
+
+        }
       }
-      if (chunkData.length === total) {
-        callback(chunkData);
-      }
-    });
-  }
+
+      //console.log(patched);
+      callback(patched);
+
+    } else {
+
+      //results are full, no need to patch
+      //console.log(results);
+      callback(results);
+
+    }
+  });
+
+}
+
+SERVER.db.FetchSingleTile = function(tileCoords) {
 
 }
 
@@ -202,9 +241,11 @@ SERVER.socket = function(data) {
     SERVER.players.create(socket, function() {
 
       //send join notice plus first chunk
-      SERVER.map.SendChunk(socket, function (chunkData) {
+      SERVER.map.GetChunk(socket, function (chunkData) {
         //emit 'join' tells client to EO.init();
-        socket.emit('join', { chunk: chunkData });
+        socket.emit('join');
+        //send map chunk
+        socket.emit('chunk', { chunk: chunkData });
         //player logged in message
         io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
         //join unique channel
@@ -224,11 +265,12 @@ SERVER.socket = function(data) {
 
 
         //test
-        setInterval(function() {
-          SERVER.map.SendChunk(socket, function(chunkData) {
-            io.sockets.in( SERVER.players.data[socket.id].name ).emit( 'chunk' , { chunk: chunkData } );
-          })
-        }, 5000);
+        // setInterval(function() {
+        //   SERVER.map.GetChunk(socket, function(chunkData) {
+        //     io.sockets.in( SERVER.players.data[socket.id].name ).emit( 'chunk' , { chunk: chunkData } );
+        //   });
+        // }, 5000);
+
       });
 
     });
@@ -263,7 +305,7 @@ SERVER.socket = function(data) {
 SERVER.map = {};
 
 SERVER.map.chunk = {};
-SERVER.map.chunk.size = 20; //20 tiles x 20 tiles
+SERVER.map.chunk.size = 100; //20 tiles x 20 tiles
 
 SERVER.map.ChunkArrayFromCenterTileCoords = function (coords) {
   
@@ -286,7 +328,17 @@ SERVER.map.ChunkArrayFromCenterTileCoords = function (coords) {
 
 }
 
-SERVER.map.SendChunk = function(socket, callback) {
+SERVER.map.ChunkRectFromCenterTileCoords = function (coords) {
+  var rect = {};
+  var offset = SERVER.map.chunk.size / 2;
+  rect.x = coords.x - offset;
+  rect.y = coords.y - offset;
+  rect.width = SERVER.map.chunk.size;
+  rect.height = SERVER.map.chunk.size;
+  return rect;
+}
+
+SERVER.map.GetChunk = function(socket, callback) {
 
   var player = SERVER.players.data[socket.id];
   if (typeof player === 'undefined') return false;
@@ -297,83 +349,19 @@ SERVER.map.SendChunk = function(socket, callback) {
     y: Math.floor(player.view.pos.y / 64)
   };
 
-  var chunkArray = SERVER.map.ChunkArrayFromCenterTileCoords(coords);
+  //var chunkArray = SERVER.map.ChunkArrayFromCenterTileCoords(coords);
 
-  var chunkData = SERVER.db.FetchMapChunk(chunkArray, function(chunkData) {
+  var chunkRect = SERVER.map.ChunkRectFromCenterTileCoords(coords);
+
+  console.log(chunkRect);
+
+  var chunkData = SERVER.db.FetchMapChunk(chunkRect, function(chunkData) {
 
     callback(chunkData);
 
   });
 
 };
-
-
-
-//um, ok
-var sendMapChunk = function(socket_id) {
-
-  var user = SERVER.players.data[socket_id];
-  if (typeof user == 'undefined') {
-    return false;
-  }
-
-  var mapOffset = {x:0, y:0, z:0};
-
-  var currentTile = {
-    x: Math.floor((GAME.map.width / 2) + (localArray.offset.x / 64)),
-    y: Math.floor((GAME.map.height / 2) + (localArray.offset.y / 64))
-  };
-  var map = [];
-  for (var i = currentTile.x - 10; i < currentTile.x + 11; i++) {
-    map[i] = [];
-    for (var j = currentTile.y - 10; j < currentTile.y + 11; j++) {
-      map[i][j] = GAME.map.array[i][j];
-    }
-  }
-
-  return map;
-  
-}
-
-
-//uhhh delete?
-var GAME = {};
-GAME.map = {};
-GAME.map.init = function() {
-  this.width = 1000;
-  this.height = 1000;
-  this.tile.init();
-  this.generate();
-  //this.draw();
-}
-GAME.map.generate = function() {
-  this.array = [];
-  for (var i=0; i<this.width; i++) {
-    this.array[i] = [];
-    for (var j=0; j<this.height; j++) {
-      GAME.map.array[i][j] = this.tile.generate();
-    }
-  }
-}
-GAME.map.tile = {};
-GAME.map.tile.init = function() {
-  this.width = 64;
-  this.height = 64;
-  this.depth = 1;
-}
-GAME.map.tile.generate = function() {
-  var tile = {};
-  tile.width = this.width;
-  tile.height = this.height;
-  if (Math.random() > .3) {
-    tile.material = 'grass';
-  } else {
-    tile.material = 'water';
-  }
-  //tile.mesh = new THREE.Mesh( this.geometry, tile.material );
-  return tile;
-}
-GAME.map.init();
 
 
 //connect to the app
