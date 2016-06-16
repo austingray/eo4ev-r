@@ -426,6 +426,7 @@ EO.input.keyboard.update = function() {
 
 EO.input.mouse = {};
 
+
 ///////////
 // Tiles //
 ///////////
@@ -448,7 +449,7 @@ EO.tiles.init = function() {
 		var texture = EO.tiles.textures[i];
 		if (typeof texture.file === 'undefined') {
 
-			var material = new THREE.MeshPhongMaterial( { color: 0xffff00 } );
+			var material = new THREE.MeshPhongMaterial( { color: 0x001111 } );
 			var geometry = new THREE.PlaneGeometry( 64, 64, 1 );
 
 		} else {
@@ -513,6 +514,9 @@ EO.map.HandleChunk = function(chunk) {
 	chunk.geometry.computeFaceNormals();
 	chunk.geometry.computeVertexNormals();
 	EO.three.scene.add(chunk);
+
+	wireframe = new THREE.WireframeHelper( chunk, 0x00ff00 );
+	EO.three.scene.add(wireframe);
 
 }
 EO.map.DrawTileFromChunkItem = function (chunk_item) {
