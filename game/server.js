@@ -121,13 +121,26 @@ SERVER.players.create = function(socket, callback) {
 }
 SERVER.players.delete = function(socket) {
 
-  var index = SERVER.players.index.indexOf(socket.id);
-  if (index > -1) {
-    var uname = SERVER.players.data[socket.id].name;
-    SERVER.players.index.splice(index, 1);
-    delete SERVER.players.data[socket.id];
-  }
-  console.log(uname + ' has disconnected.');
+  var char_id = socket.request.user.current_character
+
+  var position = SERVER.players.data[socket.id].view.pos;
+
+  var insert_position = {
+    x: position.x,
+    y: position.y,
+    z: position.z
+  };
+
+  console.log(char_id);
+  new Characters({ id: char_id }).save({ position: JSON.stringify({ x: position.x, y: position.y, z: position.z }) }, { patch: true }).then(function(model) {
+    var index = SERVER.players.index.indexOf(socket.id);
+    if (index > -1) {
+      var uname = SERVER.players.data[socket.id].name;
+      SERVER.players.index.splice(index, 1);
+      delete SERVER.players.data[socket.id];
+    }
+    console.log(uname + ' has disconnected.');
+  });
 
 }
 //currently handles player input, maybe want to route this in its own namespace
