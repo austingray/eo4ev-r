@@ -146,19 +146,7 @@ EO.settings.update = function() {
 // Three.js Core //
 ///////////////////
 EO.three = {};
-//objects marked for deletion
-EO.three.dumpster = [];
-// EO.three.cleanUp = setInterval(function() {
-// 	while (EO.three.dumpster.length > 0) {
-// 		var remove_object = EO.three.dumpster.pop();
-// 		console.log('cleaning up: ' + remove_object);
-// 		EO.three.scene.traverse( function (object) {
-// 			if (object.name === remove_object) {
-// 				EO.three.scene.remove(object);
-// 			}
-// 		});
-// 	}
-// }, 100);
+
 EO.three.init = function() {
 	
 	//scene
@@ -552,11 +540,6 @@ EO.server.socket.on('join', function(data) {
 
 EO.server.socket.on('update', function(data) {
 	EO.server.data = data;
-});
-
-EO.server.socket.on('disconnect', function(data) {
-	var user = data.name;
-	EO.three.dumpster.push(user);
 });
 
 EO.server.socket.on('chunk', function(data) {

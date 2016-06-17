@@ -125,7 +125,15 @@ SERVER.players.create = function(socket, callback) {
 
   });
 }
-SERVER.players.delete = function() {
+SERVER.players.delete = function(socket) {
+
+  var index = SERVER.players.index.indexOf(socket.id);
+  if (index > -1) {
+    var uname = SERVER.players.data[socket.id].name;
+    SERVER.players.index.splice(index, 1);
+    delete SERVER.players.data[socket.id];
+  }
+  console.log(uname + ' has disconnected.');
 
 }
 //currently handles player input, maybe want to route this in its own namespace
@@ -235,8 +243,6 @@ SERVER.socket = function(data) {
   //connection handler
   io.on('connection', function (socket) {
 
-    console.log(socket.request.user);
-
     //init connection
     SERVER.players.create(socket, function() {
 
@@ -263,32 +269,14 @@ SERVER.socket = function(data) {
           SERVER.players.updatePlayer(socket.id, data);
         });
 
-
-        //test
-        // setInterval(function() {
-        //   SERVER.map.GetChunk(socket, function(chunkData) {
-        //     io.sockets.in( SERVER.players.data[socket.id].name ).emit( 'chunk' , { chunk: chunkData } );
-        //   });
-        // }, 5000);
-
       });
 
     });
 
     //disconnect handler
     socket.on('disconnect', function () {
-
-      //TODO: save users state to the database
-
       io.emit('news', { message: socket.request.user.username + ' has returned to the mundane world.' } );
-      var index = SERVER.players.index.indexOf(socket.id);
-      if (index > -1) {
-        var uname = SERVER.players.data[socket.id].name;
-        SERVER.players.index.splice(index, 1);
-        delete SERVER.players.data[socket.id];
-      }
-      io.emit('disconnect', {name: uname});
-      console.log(uname + ' has disconnected.');
+      SERVER.players.delete(socket);
     });
 
     setInterval(function() {
