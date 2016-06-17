@@ -11,8 +11,6 @@
  * 
  */
 
-var Promise = require('bluebird');
-
 var Characters = require('../db/characters.js');
 var Maps = require('../db/maps.js');
 
@@ -102,10 +100,6 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
 
     }
   });
-
-}
-
-SERVER.db.FetchSingleTile = function(tileCoords) {
 
 }
 
