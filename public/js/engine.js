@@ -311,18 +311,18 @@ EO.input.mouse.update = function() {
 				this.currentIntersected = intersects[0];
 				var geometry = this.currentIntersected.object.geometry;
 				var faceIndex = this.currentIntersected.faceIndex;
-
 				this.storedHex = this.currentIntersected.face.color.getHex();
 
 				if (EO.input.mouse.currentIntersected) {
 	        if (faceIndex % 2 === 0) {
-				    geometry.faces[faceIndex].color.setHex(0xc0392b);
-				    geometry.faces[faceIndex+1].color.setHex(0xc0392b);
+				    geometry.faces[faceIndex].color.setHSL(.7, 1, .41);
+				    geometry.faces[faceIndex+1].color.setHSL(.7, 1, .41);
 				  } else {
-				    geometry.faces[faceIndex].color.setHex(0xc0392b);
-				    geometry.faces[faceIndex-1].color.setHex(0xc0392b);
+				    geometry.faces[faceIndex].color.setHSL(.7, 1, .41);
+				    geometry.faces[faceIndex-1].color.setHSL(.7, 1, .41);
 				  }
 	      }
+
 
 	      geometry.colorsNeedUpdate = true;
 
@@ -554,7 +554,7 @@ EO.tiles.init = function() {
 
 			var tLoader = new THREE.TextureLoader();
 			var t = tLoader.load( texture.file );
-			var material = new THREE.MeshPhongMaterial({ map: t });
+			var material = new THREE.MeshPhongMaterial({ map: t, vertexColors: true });
 			var geometry = new THREE.PlaneGeometry( 64, 64, 1 );
 
 		}

@@ -56,7 +56,7 @@ body.game {
     #gamecanvas {
       margin:auto;
       display:block;
-      cursor:none;
+      
       width:800px;
       height:600px;
       background:#ccc;
