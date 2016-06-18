@@ -315,11 +315,11 @@ EO.input.mouse.update = function() {
 
 				if (EO.input.mouse.currentIntersected) {
 	        if (faceIndex % 2 === 0) {
-				    geometry.faces[faceIndex].color.setHSL(.7, 1, .41);
-				    geometry.faces[faceIndex+1].color.setHSL(.7, 1, .41);
+				    geometry.faces[faceIndex].color.setHSL(.7, .5, .41);
+				    geometry.faces[faceIndex+1].color.setHSL(.7, .5, .41);
 				  } else {
-				    geometry.faces[faceIndex].color.setHSL(.7, 1, .41);
-				    geometry.faces[faceIndex-1].color.setHSL(.7, 1, .41);
+				    geometry.faces[faceIndex].color.setHSL(.7, .5, .41);
+				    geometry.faces[faceIndex-1].color.setHSL(.7, .5, .41);
 				  }
 	      }
 
