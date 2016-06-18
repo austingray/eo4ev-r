@@ -41,6 +41,8 @@ SERVER.db.fetchUser = function(socket, callback) {
     user.view.rot = 0;
     user.view.walking = false;
 
+    console.log(user);
+
     callback(user);
 
   });
@@ -347,8 +349,6 @@ SERVER.map.GetChunk = function(socket, callback) {
   //var chunkArray = SERVER.map.ChunkArrayFromCenterTileCoords(coords);
 
   var chunkRect = SERVER.map.ChunkRectFromCenterTileCoords(coords);
-
-  console.log(chunkRect);
 
   var chunkData = SERVER.db.FetchMapChunk(chunkRect, function(chunkData) {
 

@@ -69,6 +69,7 @@ EO.render = function() {
 	EO.settings.frame = f;
 	//input updates
 	EO.input.keyboard.update();
+	EO.input.mouse.update();
 	//animation mixer update
 	if (EO.three.mixer) EO.three.mixer.update( delta );
 	//render frame
@@ -158,7 +159,7 @@ EO.three.init = function() {
 	var camera_top = EO.settings.height / 2;
 	var camera_bottom = EO.settings.height / - 2;
 	var near = -1000;
-	var far = 10000;
+	var far = 1000;
 	EO.three.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
 	EO.three.camera.lookAt(new THREE.Vector3(0, 0, 0));
 	EO.three.camera.updateProjectionMatrix();
@@ -212,6 +213,161 @@ EO.three.updateCamera = function( position ) {
 	EO.three.camera.position.set( position.x, position.y - 2, 1 );
 	EO.three.camera.lookAt( position );
 	EO.three.camera.updateProjectionMatrix();
+}
+
+
+/////////////
+// Inputs  //
+/////////////
+EO.input = {};
+EO.input.init = function() {
+	EO.input.keyboard.init();
+	EO.input.mouse.init();
+}
+EO.input.keyboard = {};
+EO.input.keyboard.left = false;
+EO.input.keyboard.right = false;
+EO.input.keyboard.up = false;
+EO.input.keyboard.down = false;
+EO.input.keyboard.init = function() {
+	//keyboard
+	EO.input.keyboard.controller = new THREEx.KeyboardState(EO.three.renderer.domElement);
+	EO.three.renderer.domElement.setAttribute("tabIndex", "0");
+	EO.three.renderer.domElement.focus();
+	// only on keydown
+	EO.input.keyboard.controller.domElement.addEventListener('keydown', function(event){
+		//up
+		if ( EO.input.keyboard.controller.eventMatches(event, 'w') || EO.input.keyboard.controller.eventMatches(event, 'up') ) EO.input.keyboard.up = true;
+		//down
+		if ( EO.input.keyboard.controller.eventMatches(event, 's') || EO.input.keyboard.controller.eventMatches(event, 'down') ) EO.input.keyboard.down = true;
+		//left
+		if ( EO.input.keyboard.controller.eventMatches(event, 'a') || EO.input.keyboard.controller.eventMatches(event, 'left') ) EO.input.keyboard.left = true;
+		//right
+		if ( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = true;
+	});
+	EO.input.keyboard.controller.domElement.addEventListener('keyup', function(event) {
+		//up
+		if( EO.input.keyboard.controller.eventMatches(event, 'w') || EO.input.keyboard.controller.eventMatches(event, 'up') ) EO.input.keyboard.up = false;
+		//down
+		if( EO.input.keyboard.controller.eventMatches(event, 's') || EO.input.keyboard.controller.eventMatches(event, 'down') ) EO.input.keyboard.down = false;
+		//left
+		if( EO.input.keyboard.controller.eventMatches(event, 'a') || EO.input.keyboard.controller.eventMatches(event, 'left') ) EO.input.keyboard.left = false;
+		//right
+		if( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = false;
+	});
+}
+EO.input.keyboard.update = function() {
+	var input_arr = [EO.input.keyboard.up, EO.input.keyboard.right, EO.input.keyboard.down, EO.input.keyboard.left];
+	EO.server.socket.emit('input', input_arr);
+}
+
+EO.input.mouse = {};
+EO.input.mouse.raycaster = new THREE.Raycaster();
+EO.input.mouse.vector = new THREE.Vector2();
+EO.input.mouse.init = function() {
+	document.getElementById('gamecanvas').addEventListener( 'mousemove', EO.input.mouse.onMouseMove, false );
+}
+EO.input.mouse.onMouseMove = function( event ) {
+
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+
+	EO.input.mouse.vector.x = ( ( event.clientX - document.getElementById('gamecanvas').getBoundingClientRect().left ) / EO.settings.width ) * 2 - 1;
+	EO.input.mouse.vector.y = - ( ( event.clientY - document.getElementById('gamecanvas').getBoundingClientRect().top ) / EO.settings.height ) * 2 + 1;		
+
+}
+EO.mapping = true;
+EO.input.mouse.currentIntersected = null;
+EO.input.mouse.storedHex = '';
+EO.input.mouse.update = function() {
+
+	if (EO.mapping === true) {
+
+		// update the picking ray with the camera and mouse position
+		this.raycaster.setFromCamera( EO.input.mouse.vector, EO.three.camera );	
+		// calculate objects intersecting the picking ray
+		var intersects = this.raycaster.intersectObjects( EO.three.scene.children );
+
+		if ( intersects.length > 0 ) {
+			
+			if (intersects[0].object !== this.currentIntersected) {
+
+				var geometry = null;
+				var faceIndex = null;
+
+				//the current intersection is not the cached object, so let's update the stored object
+				if (this.currentIntersected) {
+					var geometry = this.currentIntersected.object.geometry;
+					var faceIndex = this.currentIntersected.faceIndex;
+					if (faceIndex % 2 === 0) {
+				    geometry.faces[faceIndex].color.setHex(this.storedHex);
+				    geometry.faces[faceIndex+1].color.setHex(this.storedHex);
+				  } else {
+				    geometry.faces[faceIndex].color.setHex(this.storedHex);
+				    geometry.faces[faceIndex-1].color.setHex(this.storedHex);
+				  }
+				}
+
+				this.currentIntersected = intersects[0];
+				var geometry = this.currentIntersected.object.geometry;
+				var faceIndex = this.currentIntersected.faceIndex;
+
+				this.storedHex = this.currentIntersected.face.color.getHex();
+
+				if (EO.input.mouse.currentIntersected) {
+	        if (faceIndex % 2 === 0) {
+				    geometry.faces[faceIndex].color.setHex(0xc0392b);
+				    geometry.faces[faceIndex+1].color.setHex(0xc0392b);
+				  } else {
+				    geometry.faces[faceIndex].color.setHex(0xc0392b);
+				    geometry.faces[faceIndex-1].color.setHex(0xc0392b);
+				  }
+	      }
+
+	      geometry.colorsNeedUpdate = true;
+
+      } else {
+
+		    // restore previous intersection object (if it exists) to its original color
+		   	if (this.currentIntersected) {
+					var geometry = this.currentIntersected.object.geometry;
+					var faceIndex = this.currentIntersected.faceIndex;
+					if (faceIndex % 2 === 0) {
+				    geometry.faces[faceIndex].color.setHex(this.storedHex);
+				    geometry.faces[faceIndex+1].color.setHex(this.storedHex);
+				  } else {
+				    geometry.faces[faceIndex].color.setHex(this.storedHex);
+				    geometry.faces[faceIndex-1].color.setHex(this.storedHex);
+				  }
+				}
+
+		    // Remove previous intersection object reference
+		    // by setting current intersection object to "nothing"
+		    this.currentIntersected = null;
+		  }
+
+
+			// var face = intersects[0].face;
+			// //face.color.setRGB( Math.random(), Math.random(), Math.random())
+		 //  var faceIndex = intersects[0].faceIndex;
+		 //  var obj = intersects[0].object;
+		 //  var geom = obj.geometry;
+
+		  // if(faceIndex%2 == 0){
+		  //   geom.faces[faceIndex].color.setRGB( Math.random(),Math.random(), Math.random())
+		  //   geom.faces[faceIndex+1].color.setRGB( Math.random(),Math.random(), Math.random())
+		  // } else{
+		  //   geom.faces[faceIndex].color.setRGB( Math.random(),Math.random(), Math.random())
+		  //   geom.faces[faceIndex-1].color.setRGB( Math.random(),Math.random(), Math.random())
+		  // }
+
+
+		 //    geom.colorsNeedUpdate = true
+		 
+		}
+
+	}
+
 }
 
 ////////////////////////
@@ -368,52 +524,6 @@ EO.models.addToWorld = function(model_id, name) {
 
 }
 
-/////////////
-// Inputs  //
-/////////////
-EO.input = {};
-EO.input.init = function() {
-	EO.input.keyboard.init();
-}
-EO.input.keyboard = {};
-EO.input.keyboard.left = false;
-EO.input.keyboard.right = false;
-EO.input.keyboard.up = false;
-EO.input.keyboard.down = false;
-EO.input.keyboard.init = function() {
-	//keyboard
-	EO.input.keyboard.controller = new THREEx.KeyboardState(EO.three.renderer.domElement);
-	EO.three.renderer.domElement.setAttribute("tabIndex", "0");
-	EO.three.renderer.domElement.focus();
-	// only on keydown
-	EO.input.keyboard.controller.domElement.addEventListener('keydown', function(event){
-		//up
-		if ( EO.input.keyboard.controller.eventMatches(event, 'w') || EO.input.keyboard.controller.eventMatches(event, 'up') ) EO.input.keyboard.up = true;
-		//down
-		if ( EO.input.keyboard.controller.eventMatches(event, 's') || EO.input.keyboard.controller.eventMatches(event, 'down') ) EO.input.keyboard.down = true;
-		//left
-		if ( EO.input.keyboard.controller.eventMatches(event, 'a') || EO.input.keyboard.controller.eventMatches(event, 'left') ) EO.input.keyboard.left = true;
-		//right
-		if ( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = true;
-	});
-	EO.input.keyboard.controller.domElement.addEventListener('keyup', function(event) {
-		//up
-		if( EO.input.keyboard.controller.eventMatches(event, 'w') || EO.input.keyboard.controller.eventMatches(event, 'up') ) EO.input.keyboard.up = false;
-		//down
-		if( EO.input.keyboard.controller.eventMatches(event, 's') || EO.input.keyboard.controller.eventMatches(event, 'down') ) EO.input.keyboard.down = false;
-		//left
-		if( EO.input.keyboard.controller.eventMatches(event, 'a') || EO.input.keyboard.controller.eventMatches(event, 'left') ) EO.input.keyboard.left = false;
-		//right
-		if( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = false;
-	});
-}
-EO.input.keyboard.update = function() {
-	var input_arr = [EO.input.keyboard.up, EO.input.keyboard.right, EO.input.keyboard.down, EO.input.keyboard.left];
-	EO.server.socket.emit('input', input_arr);
-}
-
-EO.input.mouse = {};
-
 
 ///////////
 // Tiles //
@@ -437,7 +547,7 @@ EO.tiles.init = function() {
 		var texture = EO.tiles.textures[i];
 		if (typeof texture.file === 'undefined') {
 
-			var material = new THREE.MeshPhongMaterial( { color: 0x001111 } );
+			var material = new THREE.MeshPhongMaterial( { color: 0x001111, vertexColors: true } );
 			var geometry = new THREE.PlaneGeometry( 64, 64, 1 );
 
 		} else {
@@ -498,13 +608,12 @@ EO.map.HandleChunk = function(chunk) {
 	//var materials = new THREE.MeshPhongMaterial({color: 0x000000});
 	var chunk = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( [ EO.tiles.materials[0], EO.tiles.materials[1] ] ) );
 	chunk.receiveShadow = true;
+	chunk.material.vertexColors = THREE.FaceColors;
 	console.log(chunk);
 	chunk.geometry.computeFaceNormals();
 	chunk.geometry.computeVertexNormals();
+	chunk.name = "Chunk"
 	EO.three.scene.add(chunk);
-
-	wireframe = new THREE.WireframeHelper( chunk, 0x00ff00 );
-	EO.three.scene.add(wireframe);
 
 }
 EO.map.DrawTileFromChunkItem = function (chunk_item) {
