@@ -45,9 +45,6 @@ var store = new KnexSessionStore({
 process.env.PG_CONNECTION_STRING = "postgres://eo_us:eo_pw@localhost/eo_db";
 var Users = require('./db/users.js');
 
-//routes
-var routes = require('./routes/index');
-
 //environemt variables
 process.env.TZ = 'UTC';
 if (app.get('env') === 'development') {
@@ -72,7 +69,19 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
-app.use('/', routes);
+
+//routes
+var index = require('./routes/index');
+var admin = require('./routes/admin');
+var play = require('./routes/play');
+var account = require('./routes/account');
+var character = require('./routes/character');
+
+app.use('/', index);
+app.use('/datadmindoe', admin);
+app.use('/play', play);
+app.use('/account', account);
+app.use('/character', character);
 
 //.set
 app.disable('x-powered-by');
