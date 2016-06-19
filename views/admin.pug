@@ -1,12 +1,18 @@
-doctype html
-html
-  head
-    title= title
-    link(rel='stylesheet', href='/css/admin.css')
-    script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js')
+extends layout.pug
 
-  body
-    div(id='blogpost')
+block content
+  div(class='content')
+    p
+      a(href='/datadmindoe') dat admin doe
+    if section === 'main'
+      ul
+        li
+          a(href='/datadmindoe/post') Posts
+        li
+          a(href='/datadmindoe/assets') Assets
+
+
+    if section === 'post'
       form(role='form', name='blogpost', method='post')
         div(class='row')
           label(for='post_title') Post Title:
@@ -16,3 +22,5 @@ html
           textarea(id='post_content', name='post_content')
         div(class='row')
           input(type='submit')
+
+    if section === 'assets'

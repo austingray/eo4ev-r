@@ -3,6 +3,9 @@ html
   head
     title= title
     link(rel='stylesheet', href='/css/style.css')
+    if admin === true
+      link(rel='stylesheet', href='/css/admin.css')
+    
     script(src='js/lib/jquery.min.js')
     if scripts === 'game'
       script(src='js/lib/three.js')
