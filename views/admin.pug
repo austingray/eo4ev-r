@@ -2,6 +2,8 @@ extends layout.pug
 
 block content
   div(class='content')
+    if flash
+      div(class='error') #{flash}
     p
       a(href='/datadmindoe') dat admin doe
     if section === 'main'
@@ -23,4 +25,34 @@ block content
         div(class='row')
           input(type='submit')
 
+
     if section === 'assets'
+      form(role='form', name='add_asset', method='post', type='multipart/form-data')
+        div(class='row')
+          label(for='asset_name') Name
+          input(type='text', id='asset_name', name='asset_name')
+        div(class='row')
+          label(for='asset_type') Type
+          select(id='asset_type', name='asset_type')
+            each type in asset_types
+              option(value=type.id) #{type.name}
+        div(class='row')
+          label(for='asset_category') Category
+          select(id='asset_category', name='asset_category')
+            each cat in asset_categories
+              option(value=cat.id) #{cat.name}
+        div(class='row')
+          label(for='asset_file') Select an Asset File (.json or .png)
+          input(type='file', id='asset_file', name='asset_file')
+        div(class='row')
+          label(for='asset_file') Select an Asset Skin (image file specified in .json)
+          input(type='file', id='asset_file', name='asset_file')
+        div(class='row')
+          label(for='asset_color') Color (used for tiles if no png is uploaded)
+        div(class='row submit')
+          input(type='submit', value='Submit')
+
+      div(id='current-assets')
+        each a in assets
+          div(class='asset-row')
+            span #{a.name} - #{a.type}

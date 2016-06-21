@@ -99,14 +99,32 @@ exports.seed = function(knex, Promise) {
     // }),
 
     //tiles
-    knex('tiles').del(),
-    knex('tiles').insert({
+    // knex('tiles').del(),
+    // knex('tiles').insert({
+    //     id: 1,
+    //     type: "water"
+    // }),
+    // knex('tiles').insert({
+    //     id:2,
+    //     type: "grass"
+    // })
+    
+    //asset types
+    // knex('asset_types').del(),
+    // knex('asset_types').insert({
+    //     id: 1,
+    //     name: 'Object'
+    // }),
+    // knex('asset_types').insert({
+    //     id: 2,
+    //     name: 'Tile'
+    // })
+    
+    //asset categories
+    knex('asset_categories').del(),
+    knex('asset_categories').insert({
         id: 1,
-        type: "water"
-    }),
-    knex('tiles').insert({
-        id:2,
-        type: "grass"
+        name: 'Uncategorized'
     })
 
   );

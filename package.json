@@ -16,12 +16,14 @@
     "bcrypt": "^0.8.6",
     "body-parser": "^1.15.1",
     "bookshelf": "^0.9.5",
+    "busboy": "^0.2.13",
     "connect-flash": "^0.1.1",
     "connect-pg-simple": "^3.1.0",
     "connect-session-knex": "^1.0.23",
     "cookie-parser": "^1.4.2",
     "express": "^4.13.4",
     "express-session": "^1.13.0",
+    "gm": "^1.22.0",
     "knex": "^0.11.5",
     "moment": "^2.13.0",
     "morgan": "^1.7.0",
@@ -31,6 +33,7 @@
     "pug": "^0.1.0",
     "sanitize-html": "^1.11.4",
     "serve-favicon": "^2.3.0",
+    "slug": "^0.9.1",
     "socket.io": "^1.4.6"
   }
 }
