@@ -5,11 +5,9 @@ exports.up = function(knex, Promise) {
     knex.schema.createTable("assets", function (table) {
       table.increments().primary();
       table.text("name").notNullable();
-      table.integer("asset_type").notNullable().references("id").inTable("asset_types");
-      table.integer("asset_category").notNullable().references("id").inTable("asset_categories");
+      table.integer("asset_type").references("id").inTable("asset_types");
+      table.integer("asset_category").references("id").inTable("asset_categories");
       table.string("resource_file_url");
-      table.string("resource_skin_url");
-      table.string("color");
     }),
 
     knex.schema.createTable("asset_types", function (table) {

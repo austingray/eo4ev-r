@@ -7,11 +7,11 @@ var Assets = bookshelf.Model.extend({
   tableName: 'assets',
 
   asset_type: function() {
-    return this.belongsTo(Asset_Types);
+    return this.belongsTo(Asset_Types, 'asset_type');
   },
 
   asset_category: function() {
-    return this.belongsTo(Asset_Categories);
+    return this.belongsTo(Asset_Categories, 'asset_category');
   }
 
 });

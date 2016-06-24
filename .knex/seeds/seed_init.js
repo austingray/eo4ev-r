@@ -109,22 +109,23 @@ exports.seed = function(knex, Promise) {
     //     type: "grass"
     // })
     
-    //asset types
-    // knex('asset_types').del(),
-    // knex('asset_types').insert({
-    //     id: 1,
-    //     name: 'Object'
-    // }),
-    // knex('asset_types').insert({
-    //     id: 2,
-    //     name: 'Tile'
-    // })
     
     //asset categories
     knex('asset_categories').del(),
     knex('asset_categories').insert({
-        id: 1,
         name: 'Uncategorized'
+    }),
+    
+    //asset types
+    knex('asset_types').del(),
+    knex('asset_types').insert({
+        name: 'Object'
+    }),
+    knex('asset_types').insert({
+        name: 'Skin'
+    }),
+    knex('asset_types').insert({
+        name: 'Tile'
     })
 
   );

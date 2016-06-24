@@ -12,6 +12,10 @@ block content
           a(href='/datadmindoe/post') Posts
         li
           a(href='/datadmindoe/assets') Assets
+        li
+          a(href='/datadmindoe/models') Models
+        li
+          a(href='/datadmindoe/tiles') Tiles
 
 
     if section === 'post'
@@ -27,7 +31,14 @@ block content
 
 
     if section === 'assets'
-      form(role='form', name='add_asset', method='post', type='multipart/form-data')
+      a(href='/datadmindoe/assets/add') Add New Asset
+      div(id='current-assets')
+        each a in assets
+          div(class='asset-row', data-resource-url=a.resource_file_url)
+            span #{a.name} - #{a.asset_type.name} - #{a.asset_category.name}
+
+    if section === 'assets_add'
+      form(role='form', name='add_asset', method='post', enctype="multipart/form-data")
         div(class='row')
           label(for='asset_name') Name
           input(type='text', id='asset_name', name='asset_name')
@@ -42,17 +53,7 @@ block content
             each cat in asset_categories
               option(value=cat.id) #{cat.name}
         div(class='row')
-          label(for='asset_file') Select an Asset File (.json or .png)
+          label(for='asset_file') Select an Asset File
           input(type='file', id='asset_file', name='asset_file')
-        div(class='row')
-          label(for='asset_file') Select an Asset Skin (image file specified in .json)
-          input(type='file', id='asset_file', name='asset_file')
-        div(class='row')
-          label(for='asset_color') Color (used for tiles if no png is uploaded)
         div(class='row submit')
           input(type='submit', value='Submit')
-
-      div(id='current-assets')
-        each a in assets
-          div(class='asset-row')
-            span #{a.name} - #{a.type}
