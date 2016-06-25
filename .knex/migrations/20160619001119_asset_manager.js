@@ -18,6 +18,19 @@ exports.up = function(knex, Promise) {
     knex.schema.createTable("asset_categories", function (table) {
       table.increments().primary();
       table.text("name");
+    }),
+
+    knex.schema.table("tiles", function (table) {
+      table.dropColumn('type');
+      table.text("name").notNullable();
+      table.integer("asset_id").references("id").inTable("assets");
+    }),
+
+    knex.schema.createTable("models", function (table) {
+      table.increments().primary();
+      table.text("name").notNullable();
+      table.integer("model_asset_id").references("id").inTable("assets");
+      table.integer("texture_asset_id").references("id").inTable("assets");
     })
 
   ]);
@@ -28,7 +41,8 @@ exports.down = function(knex, Promise) {
 
     knex.schema.dropTable('assets'),
     knex.schema.dropTable('asset_types'),
-    knex.schema.dropTable('asset_categories')
+    knex.schema.dropTable('asset_categories'),
+    knex.schema.dropTable('models')
 
   ]);
 };

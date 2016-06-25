@@ -1,7 +1,7 @@
 
 exports.seed = function(knex, Promise) {
   return Promise.join(
-    
+
     //sexes
     // knex('sexes').del(),
     // knex('sexes').insert({id: 1, name: 'Male'}),
@@ -108,24 +108,27 @@ exports.seed = function(knex, Promise) {
     //     id:2,
     //     type: "grass"
     // })
-    
-    
+
+
     //asset categories
     knex('asset_categories').del(),
     knex('asset_categories').insert({
         name: 'Uncategorized'
     }),
-    
+    knex('asset_categories').insert({
+      name: 'Tiles'
+    }),
+    knex('asset_categories').insert({
+      name: 'Characters'
+    }),
+
     //asset types
     knex('asset_types').del(),
     knex('asset_types').insert({
-        name: 'Object'
+        name: 'Model'
     }),
     knex('asset_types').insert({
-        name: 'Skin'
-    }),
-    knex('asset_types').insert({
-        name: 'Tile'
+        name: 'Texture'
     })
 
   );
