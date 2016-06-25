@@ -7,12 +7,6 @@ var sanitize = require('sanitize-html');
 
 //db objects
 var knex = require('knex');
-var Users = require('../db/users.js');
-var Characters = require('../db/characters.js');
-var Sexes = require('../db/sexes.js');
-var Races = require('../db/races.js');
-var Classes = require('../db/classes.js');
-var Posts = require('../db/posts.js');
 
 ///////////////////
 // Play the game //

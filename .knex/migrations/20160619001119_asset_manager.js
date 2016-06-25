@@ -42,7 +42,13 @@ exports.down = function(knex, Promise) {
     knex.schema.dropTable('assets'),
     knex.schema.dropTable('asset_types'),
     knex.schema.dropTable('asset_categories'),
-    knex.schema.dropTable('models')
+    knex.schema.dropTable('models'),
+
+    knex.schema.table('tiles', function(table) {
+      table.text('type');
+      table.dropColumn('name');
+      table.dropColumn('asset_id');
+    })
 
   ]);
 };

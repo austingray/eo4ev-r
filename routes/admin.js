@@ -19,11 +19,6 @@ var upload = multer({ storage:storage });
 
 //db objects
 var knex = require('knex');
-var Users = require('../db/users.js');
-var Characters = require('../db/characters.js');
-var Sexes = require('../db/sexes.js');
-var Races = require('../db/races.js');
-var Classes = require('../db/classes.js');
 var Posts = require('../db/posts.js');
 var Assets = require('../db/assets.js');
 var Asset_Types = require('../db/asset_types.js');
@@ -111,7 +106,7 @@ router.get('/assets', function(req, res, next) {
         });
       });
     });
-    
+
   });
 });
 
@@ -207,5 +202,7 @@ router.post('/assets/add', upload.single('asset_file'), function(req, res, next)
 
   });
 });
+
+
 
 module.exports = router;

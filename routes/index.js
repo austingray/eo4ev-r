@@ -9,9 +9,6 @@ var sanitize = require('sanitize-html');
 var knex = require('knex');
 var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
-var Sexes = require('../db/sexes.js');
-var Races = require('../db/races.js');
-var Classes = require('../db/classes.js');
 var Posts = require('../db/posts.js');
 
 ///////////////
@@ -19,7 +16,7 @@ var Posts = require('../db/posts.js');
 ///////////////
 router.get('/', function(req, res, next) {
   new Posts().query(function(qb){
-    qb.orderBy('created_at','DESC'); 
+    qb.orderBy('created_at','DESC');
   }).fetchAll({withRelated: ['user']}).then(function(posts) {
     res.render('home', { title: 'Welcome to the homepage for EO4Ev-r', user: req.user, posts: posts.toJSON() });
   });

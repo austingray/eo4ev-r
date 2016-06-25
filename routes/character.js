@@ -9,9 +9,9 @@ var sanitize = require('sanitize-html');
 var knex = require('knex');
 var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
-var Sexes = require('../db/sexes.js');
-var Races = require('../db/races.js');
-var Classes = require('../db/classes.js');
+var Character_Sexes = require('../db/character_sexes.js');
+var Character_Races = require('../db/character_races.js');
+var Character_Classes = require('../db/character_classes.js');
 var Posts = require('../db/posts.js');
 
 ////////////////////////
@@ -21,11 +21,11 @@ router.get('/', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.redirect('/account');
   } else {
-    new Sexes().fetchAll().then(function(sexes_model) {
+    new Character_Sexes().fetchAll().then(function(sexes_model) {
       var sexes = sexes_model.toJSON();
-      new Races().fetchAll().then(function(races_model) {
+      new Character_Races().fetchAll().then(function(races_model) {
         var races = races_model.toJSON();
-        new Classes().fetchAll().then(function(classes_model) {
+        new Character_Classes().fetchAll().then(function(classes_model) {
           var classes = classes_model.toJSON();
           res.render('character', { flash: req.flash('error'), title: 'Dat three.js doe - Character Creation', user: req.user, scripts: 'character', sexes: sexes, races: races, classes: classes });
         })
@@ -38,11 +38,11 @@ router.post('/', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.redirect('/account');
   } else {
-    
+
     var _name = req.body['character-name'];
     var allowedRegex = /^[a-zA-Z0-9_]{1,15}$/;
     var validName = allowedRegex.test(_name);
-    
+
     if ( ! validName ) {
       req.flash('error', 'Invalid character name. Please try a new name.');
       res.redirect('/character');
@@ -51,11 +51,11 @@ router.post('/', function(req, res, next) {
 
     new Characters().query( 'whereRaw', 'LOWER(name) = ?', _name.toLowerCase() ).fetch().then(function(model) {
       if (null === model) {
-        
+
         //fetch race, validate color req.body, save new character
         var character_race_id = Number( sanitize( req.body['character-races'] ) );
-        new Races({ id: character_race_id }).fetch().then(function(model) {
-          
+        new Character_Races({ id: character_race_id }).fetch().then(function(model) {
+
           if (model === null) {
             res.send('Quit screwing around');
             return;
@@ -82,7 +82,7 @@ router.post('/', function(req, res, next) {
 
           //fetch sex
           var character_sex_id = Number( sanitize( req.body['character-sex'] ) );
-          new Sexes({ id: character_sex_id }).fetch().then(function(model) {
+          new Character_Sexes({ id: character_sex_id }).fetch().then(function(model) {
 
             if (model === null) {
               res.send("Quit screwing around!");
@@ -90,7 +90,7 @@ router.post('/', function(req, res, next) {
             }
 
             var character_class_id = Number( sanitize( req.body['character-class'] ) );
-            new Classes({ id: character_class_id }).fetch().then(function(model) {
+            new Character_Classes({ id: character_class_id }).fetch().then(function(model) {
 
               if (model === null) {
                 res.send("Quit screwing around!!!");
@@ -137,7 +137,7 @@ router.get('/delete', function(req, res, next) {
 });
 
 router.post('/delete', function(req, res, next) {
-  
+
   if (typeof req.user === 'undefined') {
     res.send('fuck off');
     return;
@@ -147,7 +147,7 @@ router.post('/delete', function(req, res, next) {
       var delId = sanitize( req.body.character_id );
       console.log(delId);
       new Characters({ id: delId, user_id: req.user.id }).fetch().then(function(model) {
-        
+
         if (model === null) {
           res.redirect('/account');
           return;
@@ -159,7 +159,7 @@ router.post('/delete', function(req, res, next) {
             console.log('deleted');
             res.redirect('/account');
           });
-          
+
         });
 
       });

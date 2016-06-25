@@ -2,7 +2,7 @@ var bookshelf = require('./bookshelf.js');
 var Characters = require('./characters.js');
 
 var Users = bookshelf.Model.extend({
-  
+
   tableName: 'users',
 
   characters: function() {

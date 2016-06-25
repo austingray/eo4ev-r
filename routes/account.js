@@ -9,10 +9,6 @@ var sanitize = require('sanitize-html');
 var knex = require('knex');
 var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
-var Sexes = require('../db/sexes.js');
-var Races = require('../db/races.js');
-var Classes = require('../db/classes.js');
-var Posts = require('../db/posts.js');
 
 /////////////////////////
 // Manage your account //
@@ -40,7 +36,7 @@ router.post('/', function(req, res, next) {
 
     var char_id = Number( sanitize( req.body['current-character'] ) );
     new Characters({ id: char_id, user_id: req.user.id }).fetch().then(function(model) {
-      
+
       if (model === null) {
         res.send('oh buggar off');
         return;

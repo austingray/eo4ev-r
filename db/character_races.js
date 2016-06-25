@@ -1,8 +1,8 @@
 var bookshelf = require('./bookshelf.js');
 
 var Races = bookshelf.Model.extend({
-  
-  tableName: 'races'
+
+  tableName: 'character_races'
 
 });
 
