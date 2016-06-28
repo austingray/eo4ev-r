@@ -96,7 +96,7 @@ passport.deserializeUser(function(id, done) {
   new Users({ id: id })
     .fetch()
     .then(function(model){
-      done(null, model.toJSON());    
+      done(null, model.toJSON());
     });
 });
 //local strategy

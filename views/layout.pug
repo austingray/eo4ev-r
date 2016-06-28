@@ -5,13 +5,13 @@ html
     link(rel='stylesheet', href='/css/style.css')
     if admin === true
       link(rel='stylesheet', href='/css/admin.css')
-    
-    script(src='js/lib/jquery.min.js')
+
+    script(src='/js/lib/jquery.min.js')
     if scripts === 'game'
-      script(src='js/lib/three.js')
-      script(src='js/lib/threex.keyboardstate.js')
-      script(src='js/lib/TrackballControls.js')
-      script(src='js/lib/Stats.js')
+      script(src='/js/lib/three.js')
+      script(src='/js/lib/threex.keyboardstate.js')
+      script(src='/js/lib/TrackballControls.js')
+      script(src='/js/lib/Stats.js')
       script(src='/socket.io/socket.io.js')
       script.
         $(document).ready(function() {
@@ -24,8 +24,8 @@ html
           });
         });
     if scripts === 'character'
-      script(src='js/lib/three.js')
-      script(src='js/lib/Stats.js')
+      script(src='/js/lib/three.js')
+      script(src='/js/lib/Stats.js')
 
   body(class='game')
     div(id='menubar')

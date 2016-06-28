@@ -23,12 +23,14 @@ var Posts = require('../db/posts.js');
 var Assets = require('../db/assets.js');
 var Asset_Types = require('../db/asset_types.js');
 var Asset_Categories = require('../db/asset_categories.js');
+var Character_Races = require('../db/character_races.js');
 
 /////////////
 // helpers //
 /////////////
 var validateAdmin = function(req, res, callback) {
   if (req.user && req.user.access === 10) {
+    res_object.user = req.user;
     callback();
   } else {
     res.sendStatus(404);
@@ -53,8 +55,7 @@ var res_object = {
 /////////////////
 router.get('/', function(req, res, next) {
   validateAdmin(req, res, function() {
-    res_object.user = req.user;
-    res_object.section = 'main';
+    res_object.section = 'index';
     res.render('admin', res_object);
   });
 });
@@ -64,7 +65,6 @@ router.get('/', function(req, res, next) {
 ///////////
 router.get('/post', function(req, res, next) {
   validateAdmin(req, res, function() {
-    res_object.user = req.user;
     res_object.section = 'post';
     res.render('admin', res_object);
   });
@@ -93,7 +93,6 @@ router.get('/assets', function(req, res, next) {
           var assets = model.toJSON();
 
           //set our res_object
-          res_object.user = req.user;
           res_object.section = 'assets';
           res_object.asset_types = asset_types;
           res_object.asset_categories = asset_categories;
@@ -122,7 +121,6 @@ router.get('/assets/add', function(req, res, next) {
           var assets = model.toJSON();
 
           //set our res_object
-          res_object.user = req.user;
           res_object.section = 'assets_add';
           res_object.asset_types = asset_types;
           res_object.asset_categories = asset_categories;
@@ -178,9 +176,9 @@ router.post('/assets/add', upload.single('asset_file'), function(req, res, next)
 
           var model_object = {
             name: sanitize(req.body.asset_name),
-            asset_type: sanitize(req.body.asset_type),
-            asset_category: sanitize(req.body.asset_category),
-            resource_file_url: req.file.path
+            asset_type_id: sanitize(req.body.asset_type),
+            asset_category_id: sanitize(req.body.asset_category),
+            file_url: req.file.path
           };
 
           if (typeof uploaded_assets[0] !== 'undefined')
@@ -203,6 +201,54 @@ router.post('/assets/add', upload.single('asset_file'), function(req, res, next)
   });
 });
 
+////////////
+// models //
+////////////
+router.get('/races', function(req, res, next) {
+  validateAdmin(req, res, function() {
 
+    new Character_Races().fetchAll().then(function(model) {
+      res_object.section = 'races';
+      res_object.races = model.toJSON();
+      res.render('admin', res_object);
+    })
+
+  });
+});
+
+router.get('/races/update/:id', function(req, res, next) {
+  validateAdmin(req, res, function() {
+    new Character_Races({ id: req.params.id }).fetch().then(function(races) {
+      Assets.query(function(qb) {
+        qb.where('asset_type_id', '=', 1)
+      }).fetchAll().then(function(assets) {
+        //hardcoded to `1`, cause that is models
+        res_object.section = 'races_update';
+        res_object.race = races.toJSON();
+        res_object.assets = assets.toJSON();
+        res.render('admin', res_object);
+      })
+    })
+  });
+});
+
+router.post('/races/update/:id', function(req, res, next) {
+  validateAdmin(req, res, function() {
+
+    new Character_Races({ id: req.params.id }).save({
+      name: sanitize(req.body.name),
+      description: sanitize(req.body.description),
+      hue: sanitize(req.body.hue),
+      sat_min: sanitize(req.body.sat_min),
+      sat_max: sanitize(req.body.sat_max),
+      light_min: sanitize(req.body.light_min),
+      light_max: sanitize(req.body.light_max),
+      default_model_id: sanitize(req.body.default_model_id)
+    }, {patch: true}).then(function(model) {
+      res.redirect('/datadmindoe/races');
+    })
+
+  });
+});
 
 module.exports = router;

@@ -6,17 +6,28 @@ block content
       div(class='error') #{flash}
     p
       a(href='/datadmindoe') dat admin doe
-    if section === 'main'
-      ul
-        li
-          a(href='/datadmindoe/post') Posts
-        li
-          a(href='/datadmindoe/assets') Assets
-        li
-          a(href='/datadmindoe/models') Models
-        li
-          a(href='/datadmindoe/tiles') Tiles
 
+    if section === 'index'
+      div(id='admin-list')
+        ul
+          li
+            a(href='/datadmindoe/assets') Assets
+          li
+            a(href='/datadmindoe/characters') Characters
+          li
+            a(href='/datadmindoe/classes') Classes
+          li
+            a(href='/datadmindoe/items') Items
+          li
+            a(href='/datadmindoe/NPCs') NPCs
+          li
+            a(href='/datadmindoe/post') Posts
+          li
+            a(href='/datadmindoe/races') Races
+          li
+            a(href='/datadmindoe/tiles') Tiles
+          li
+            a(href='/datadmindoe/users') Users
 
     if section === 'post'
       form(role='form', name='blogpost', method='post')
@@ -32,7 +43,7 @@ block content
 
     if section === 'assets'
       a(href='/datadmindoe/assets/add') Add New Asset
-      div(id='current-assets')
+      div(id='admin-list')
         each a in assets
           div(class='asset-row', data-resource-url=a.resource_file_url)
             span #{a.name} - #{a.asset_type.name} - #{a.asset_category.name}
@@ -55,5 +66,59 @@ block content
         div(class='row')
           label(for='asset_file') Select an Asset File
           input(type='file', id='asset_file', name='asset_file')
+        div(class='row submit')
+          input(type='submit', value='Submit')
+
+    if section === 'races'
+      a(href='/datadmindoe/races/add') Add New Race
+      div(id='admin-list')
+        table
+          thead
+            tr
+              th ID
+              th Name
+              th Description
+              th Default Model
+              th Update
+              th Delete
+          tbody
+            each r in races
+              tr
+                td #{r.id}
+                td #{r.name}
+                td #{r.description}
+                td #{r.default_model_id}
+                td
+                  a(href='/datadmindoe/races/update/'+r.id) Update
+                td
+                  a(href='/datadmindoe/races/delete/'+r.id) Delete
+
+    if section === 'races_update'
+      form(class='form', name='form', role='form', id='character_races-update', method='post')
+        div(class='row')
+          label(for='race_name') Name
+          input(type='text', id='race_name', name='name', value=race.name)
+        div(class='row')
+          label(for='race_description') Description
+          textarea(id='race_description', name='description') #{race.description}
+        div(class='row col3')
+          div(class='col')
+            label(for='race_hue') Hue
+            input(type='text', id='race_hue', name='hue', value=race.hue)
+          div(class='col')
+            label(for='race_sat_min') Saturation Min
+            input(type='text', id='race_sat_min', name='sat_min', value=race.sat_min)
+            label(for='race_sat_max') Saturation Max
+            input(type='text', id='race_sat_max', name='sat_max', value=race.sat_max)
+          div(class='col')
+            label(for='race_light_min') Lightness Min
+            input(type='text', id='race_light_min', name='light_min', value=race.light_min)
+            label(for='race_light_max') Lightness Max
+            input(type='text', id='race_light_max', name='light_max', value=race.light_max)
+        div(class='row')
+          label(for='race_default_model_id') Default Model (Asset) ID
+          select(id='race_default_model_id', name='default_model_id')
+            each model in assets
+              option(value=model.id, selected=(model.id===race.default_model_id)) #{model.name}
         div(class='row submit')
           input(type='submit', value='Submit')

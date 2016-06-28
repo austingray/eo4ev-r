@@ -1,5 +1,5 @@
 /*
- * Global 
+ * Global
  */
 *, *:before, *:after {
   -webkit-box-sizing:border-box;
@@ -56,7 +56,7 @@ body.game {
     #gamecanvas {
       margin:auto;
       display:block;
-      
+
       width:800px;
       height:600px;
       background:#ccc;
@@ -180,6 +180,12 @@ form.form .row.submit input {
   display:block;
   cursor:pointer;
   -webkit-appearance:none;
+}
+form.form .row.col3:after {
+  content:" ";
+  display:block;
+  width:100%;
+  clear:both;
 }
 form.form .row.col3 .col {
   width:33.33333333333%;
