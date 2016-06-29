@@ -24,6 +24,7 @@ var Assets = require('../db/assets.js');
 var Asset_Types = require('../db/asset_types.js');
 var Asset_Categories = require('../db/asset_categories.js');
 var Character_Races = require('../db/character_races.js');
+var Tiles = require('../db/tiles.js');
 
 /////////////
 // helpers //
@@ -201,9 +202,9 @@ router.post('/assets/add', upload.single('asset_file'), function(req, res, next)
   });
 });
 
-////////////
-// models //
-////////////
+///////////
+// races //
+///////////
 router.get('/races', function(req, res, next) {
   validateAdmin(req, res, function() {
 
@@ -252,4 +253,68 @@ router.post('/races/update/:id', function(req, res, next) {
   });
 });
 
+///////////
+// tiles //
+///////////
+router.get('/tiles', function(req, res, next) {
+  validateAdmin(req, res, function() {
+
+    new Tiles().fetchAll({ withRelated: ['asset'] }).then(function(model) {
+      res_object.section = 'tiles';
+      res_object.tiles = model.toJSON();
+      res.render('admin', res_object);
+    })
+
+  });
+});
+
+router.get('/tiles/update/:id?', function(req, res, next) {
+  validateAdmin(req, res, function() {
+    res_object.section = 'tiles_update';
+    if (typeof req.params.id === 'undefined') {
+      Assets.query(function(qb) {
+        qb.where('asset_type_id', '=', 2).andWhere('asset_category_id', '=', 3)
+      }).fetchAll().then(function(assets) {
+        res_object.tile = {};
+        res_object.assets = assets.toJSON();
+        res.render('admin', res_object);
+      });
+    } else {
+      new Tiles({ id: req.params.id }).fetch().then(function(tiles) {
+        Assets.query(function(qb) {
+          qb.where('asset_type_id', '=', 2).andWhere('asset_category_id', '=', 3)
+        }).fetchAll().then(function(assets) {
+          res_object.tile = tiles.toJSON();
+          res_object.assets = assets.toJSON();
+          res.render('admin', res_object);
+        })
+      });
+    }
+  });
+});
+
+router.post('/tiles/update/:id?', function(req, res, next) {
+  validateAdmin(req, res, function() {
+
+    if (typeof req.params.id === "undefined") {
+      new Tiles({ name: sanitize(req.body.name), asset_id: sanitize(req.body.asset_id) }).save().then(function(model) {
+        res.redirect('/datadmindoe/tiles');
+      })
+    } else {
+      new Tiles({ id: req.params.id }).save({
+        name: sanitize(req.body.name),
+        asset_id: sanitize(req.body.asset_id)
+      }, {patch: true}).then(function(model) {
+        res.redirect('/datadmindoe/tiles');
+      })
+    }
+
+  });
+});
+
+
+
+/////////////
+// exports //
+/////////////
 module.exports = router;

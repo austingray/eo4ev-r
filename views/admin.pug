@@ -129,3 +129,37 @@ block content
               option(value=model.id, selected=(model.id===race.female_model_id)) #{model.name}
         div(class='row submit')
           input(type='submit', value='Submit')
+
+    if section === 'tiles'
+      a(href='/datadmindoe/tiles/update') Add New Tile
+      div(id='admin-list')
+        table
+          thead
+            tr
+              th ID
+              th Tile Name
+              th Asset Name
+              th Update
+              th Delete
+          tbody
+            each t in tiles
+              tr
+                td #{t.id}
+                td #{t.name}
+                td #{t.asset.name}
+                td
+                  a(href='/datadmindoe/tiles/update/'+t.id) Update
+                td
+                  a(href='/datadmindoe/tiles/delete/'+t.id) Delete
+    if section === 'tiles_update'
+      form(class='form', name='form', role='form', id='tiles-update', method='post')
+        div(class='row')
+          label(for='tile_name') Tile Name
+          input(type='text', id='tile_name', name='name', value=tile.name)
+        div(class='row')
+          label(for='asset_id') Asset ID
+          select(id='asset_id', name='asset_id')
+            each texture in assets
+              option(value=texture.id, selected=(texture.id===tile.asset_id)) #{texture.name}
+        div(class='row submit')
+          input(type='submit', value='Submit')
