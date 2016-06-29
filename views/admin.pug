@@ -78,7 +78,8 @@ block content
               th ID
               th Name
               th Description
-              th Default Model
+              th Male Model
+              th Female Model
               th Update
               th Delete
           tbody
@@ -87,7 +88,8 @@ block content
                 td #{r.id}
                 td #{r.name}
                 td #{r.description}
-                td #{r.default_model_id}
+                td #{r.male_model_id}
+                td #{r.female_model_id}
                 td
                   a(href='/datadmindoe/races/update/'+r.id) Update
                 td
@@ -116,9 +118,14 @@ block content
             label(for='race_light_max') Lightness Max
             input(type='text', id='race_light_max', name='light_max', value=race.light_max)
         div(class='row')
-          label(for='race_default_model_id') Default Model (Asset) ID
-          select(id='race_default_model_id', name='default_model_id')
+          label(for='race_default_model_id') Male Model (Asset) ID
+          select(id='race_default_model_id', name='male_model_id')
             each model in assets
-              option(value=model.id, selected=(model.id===race.default_model_id)) #{model.name}
+              option(value=model.id, selected=(model.id===race.male_model_id)) #{model.name}
+        div(class='row')
+          label(for='race_default_model_id') Female Model (Asset) ID
+          select(id='race_default_model_id', name='female_model_id')
+            each model in assets
+              option(value=model.id, selected=(model.id===race.female_model_id)) #{model.name}
         div(class='row submit')
           input(type='submit', value='Submit')

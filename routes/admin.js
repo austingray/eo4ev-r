@@ -243,7 +243,8 @@ router.post('/races/update/:id', function(req, res, next) {
       sat_max: sanitize(req.body.sat_max),
       light_min: sanitize(req.body.light_min),
       light_max: sanitize(req.body.light_max),
-      default_model_id: sanitize(req.body.default_model_id)
+      male_model_id: sanitize(req.body.male_model_id),
+      female_model_id: sanitize(req.body.female_model_id)
     }, {patch: true}).then(function(model) {
       res.redirect('/datadmindoe/races');
     })

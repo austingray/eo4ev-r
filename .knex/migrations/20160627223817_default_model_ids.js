@@ -3,7 +3,8 @@ exports.up = function(knex, Promise) {
   return Promise.all([
 
     knex.schema.table('character_races', function(table) {
-      table.integer('default_model_id');
+      table.integer('male_model_id');
+      table.integer('female_model_id');
     })
 
   ])
@@ -13,7 +14,8 @@ exports.down = function(knex, Promise) {
     return Promise.all([
 
       knex.schema.table('character_races', function(table) {
-        table.dropColumn('default_model_id');
+        table.dropColumn('male_model_id');
+        table.dropColumn('female_model_id');
       })
 
     ])
