@@ -56,7 +56,8 @@ EO.update = function() {
   //add new players
   for (var k = 0; k < EO.server.data.localView.players.length; k++) {
     if ( ! EO.world.isActiveObject( EO.server.data.localView.players[k].name) ) {
-      EO.models.addToWorld( 'hero', EO.server.data.localView.players[k].name );
+      //console.log(  EO.server.data.localView.players[k] );
+      EO.models.addToWorld( EO.server.data.localView.players[k].current_model, EO.server.data.localView.players[k].name );
     }
   }
   //traverse the scene

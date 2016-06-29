@@ -6,27 +6,29 @@
 EO.models = {}
 EO.models.library = {};
 EO.models.dir = 'js/models/';
-EO.models.predefined = [
-  { file: EO.models.dir + 'updated_export_8.json', id: 'hero', scale: 6, rotation_x: 1.45 }
-];
-EO.models.init = function() {
-  //get a loader
-  var loader = new THREE.ObjectLoader();
-  //loop through all our predefined model json files
-  for (var i = 0; i < EO.models.predefined.length; i++) {
+// EO.models.predefined = [
+//   { file: EO.models.dir + 'updated_export_8.json', id: 'hero', scale: 6, rotation_x: 1.45 }
+// ];
+EO.models.preloads = [];
+EO.models.createfunc = function(i) {
+  return function() {
     //cast to var
     var predefined = EO.models.predefined[i];
     //load
-    loader.load( predefined.file, function(object) {
+    console.log(predefined);
+    //get a loader
+    var loader = new THREE.ObjectLoader();
+    loader.load( window.location.origin + '/' + EO.models.predefined[0].file_url.split('public/')[1], function(object) {
       //our model
+      console.log('here0');
       var model = object.children[0];
 
-      if (predefined.id === 'hero') {
-        
+      //if (predefined.id === 'hero') {
+
         var texture = model.material.map;
         EO.globalTexture = model.material.map;
         texture.needsUpdate = true; // important
-        
+
         // uniforms
         var uniforms = {
           color: { type: "c", value: new THREE.Color( 0xff0000 ) }, // material is "red"
@@ -47,22 +49,43 @@ EO.models.init = function() {
         //model.material = material;
         skinMesh.material.skinning = true;
         //model.material._needsUpdate = true;
-      }
+      //}
 
-      skinMesh.scale.x = predefined.scale;
-      skinMesh.scale.y = predefined.scale;
-      skinMesh.scale.z = predefined.scale;
-      skinMesh.rotation.x = predefined.rotation_x;
+      skinMesh.scale.x = 6;
+      skinMesh.scale.y = 6;
+      skinMesh.scale.z = 6;
+      skinMesh.rotation.x = 1.45;
+      skinMesh.name = predefined.name;
+
       EO.models.library[predefined.id] = skinMesh;
     });
   }
 }
+EO.models.init = function() {
+
+  EO.util.ajax('/assets/models/all', function(response) {
+    EO.models.predefined = JSON.parse(response.responseText);
+    console.log(EO.models.predefined);
+    //loop through all our predefined model json files
+    for (var i = 0; i < EO.models.predefined.length; i++) {
+      EO.models.preloads[i] = EO.models.createfunc(i);
+    }
+    for (var j = 0; j < EO.models.predefined.length; j++) {
+      EO.models.preloads[j]();
+    }
+  }); //end ajax
+}
 EO.models.addToWorld = function(model_id, name) {
 
-  if (typeof EO.models.library[model_id] === 'undefined') return;
+  if (typeof EO.models.library[model_id] === 'undefined') {
+    console.log('the model id was undefined!!!');
+    return;
+  }
 
   var model = {};
   model.mesh = EO.models.library[model_id].clone(true);
+
+  console.log(model.mesh.geometry);
 
   //textures
   var texture = EO.globalTexture;
@@ -86,7 +109,7 @@ EO.models.addToWorld = function(model_id, name) {
         //model.material = material;
         skinMesh.material.skinning = true;
         //model.material._needsUpdate = true;
-      
+
         skinMesh.scale.x = EO.models.library[model_id].scale.x;
         skinMesh.scale.y = EO.models.library[model_id].scale.y;
         skinMesh.scale.z = EO.models.library[model_id].scale.z;
