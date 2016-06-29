@@ -8,11 +8,12 @@
  *    .mapView *** determines the map data that a current player should see, and returns that object data, returns an array of map grids, translated to planes on client's view
  *
  *  SERVER.socket  *** socket handler, contains all socket interactions, used as the module export
- * 
+ *
  */
 
 var Characters = require('../db/characters.js');
 var Maps = require('../db/maps.js');
+var Assets = require('../db/assets.js');
 
 var SERVER = {};
 
@@ -21,7 +22,7 @@ var SERVER = {};
 //////////////////////
 SERVER.db = {};
 SERVER.db.fetchUser = function(socket, callback) {
-  new Characters({ id: socket.request.user.current_character }).fetch().then(function(model) {
+  new Characters({ id: socket.request.user.current_character }).fetch({withRelated: ['current_model']}).then(function(model) {
 
     if (model === null) {
       console.log('user logged in to game with character that does not exist!!!!');
@@ -29,9 +30,16 @@ SERVER.db.fetchUser = function(socket, callback) {
     }
 
     var user_data = model.toJSON();
+    console.log(user_data);
+    if (user_data.current_model == null) {
+      var current_model_name = 7;
+    } else {
+      var current_model_name = user_data.current_model;
+    }
 
     var user = {};
     user.name = user_data.name;
+    user.current_model = 7;
     user.hsl = {};
     user.hsl.h = user_data.hue;
     user.hsl.s = user_data.saturation;
@@ -40,8 +48,6 @@ SERVER.db.fetchUser = function(socket, callback) {
     user.view.pos = user_data.position;
     user.view.rot = 0;
     user.view.walking = false;
-
-    console.log(user);
 
     callback(user);
 
@@ -113,7 +119,7 @@ SERVER.players.data = {};
 SERVER.players.index = [];
 SERVER.players.create = function(socket, callback) {
   SERVER.db.fetchUser(socket, function(user) {
-    
+
     SERVER.players.index.push(socket.id);
     SERVER.players.data[socket.id] = user;
 
@@ -147,7 +153,7 @@ SERVER.players.delete = function(socket) {
 }
 //currently handles player input, maybe want to route this in its own namespace
 SERVER.players.updatePlayer = function(socket_id, inputs) {
-  
+
   var walking = false;
   var cRot;
   var mSpeed = 1.55;
@@ -204,7 +210,7 @@ SERVER.view.localView = function(socket_id) {
   //check current users position
   var player = SERVER.players.data[socket_id];
   if (typeof player === 'undefined') return false;
-  
+
   //do dat local view
   localView = {};
   localView.players = this.playerView(player);
@@ -217,14 +223,14 @@ SERVER.view.playerView = function(player) {
 
   var playerView = [];
   for (var i = 0; i < SERVER.players.index.length; i++) {
-    //loop through all connected players // eventually should break into testing zones/regions, 
+    //loop through all connected players // eventually should break into testing zones/regions,
     var player_is_visible = false;
     var key = SERVER.players.index[i];
     var player_check = SERVER.players.data[key];
     //check if this is our current player so camera knows who to focus on
     player_check.isPlayer = false;
     if (player_check.name === player.name) player_check.isPlayer = true;
-    //if (isCloseEnough(player, player_check)) { 
+    //if (isCloseEnough(player, player_check)) {
     playerView.push(player_check);
     //};
   }
@@ -305,7 +311,7 @@ SERVER.map.chunk = {};
 SERVER.map.chunk.size = 100; //20 tiles x 20 tiles
 
 SERVER.map.ChunkArrayFromCenterTileCoords = function (coords) {
-  
+
   var chunkArray = [];
 
   var offset = SERVER.map.chunk.size / 2;

@@ -10,6 +10,7 @@ var knex = require('knex');
 var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
 var Posts = require('../db/posts.js');
+var Assets = require('../db/assets.js');
 
 ///////////////
 // Home page //
@@ -89,6 +90,15 @@ router.post('/login', passport.authenticate('local', {
   }), function (req, res) {
     res.redirect('/account');
 });
+
+//asset requests
+router.get('/assets/models/all', function(req, res, next) {
+  Assets.query(function(qb) {
+    qb.where('asset_type_id', '=', 1)
+  }).fetchAll().then(function(assets) {
+    res.json(assets.toJSON());
+  });
+})
 
 //////////////////////////////////////////////////////////////////////////////////////
 //helper function to convert username to lowercase and check if it is already taken //
