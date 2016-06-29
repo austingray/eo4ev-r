@@ -18,7 +18,7 @@ EO.models.createfunc = function(i) {
     console.log(predefined);
     //get a loader
     var loader = new THREE.ObjectLoader();
-    loader.load( window.location.origin + '/' + EO.models.predefined[0].file_url.split('public/')[1], function(object) {
+    loader.load( window.location.origin + '/' + EO.models.predefined[i].file_url.split('public/')[1], function(object) {
       //our model
       console.log('here0');
       var model = object.children[0];
@@ -43,6 +43,7 @@ EO.models.createfunc = function(i) {
         });
 
         var geometry = model.geometry;
+        console.log(geometry);
 
         var skinMesh = new THREE.SkinnedMesh( geometry, material );
 
