@@ -14,8 +14,6 @@ EO.models.createfunc = function(i) {
   return function() {
     //cast to var
     var predefined = EO.models.predefined[i];
-    //load
-    console.log(predefined);
     //get a loader
     var loader = new THREE.ObjectLoader();
     loader.load( window.location.origin + '/' + EO.models.predefined[i].file_url.split('public/')[1], function(object) {
@@ -42,7 +40,6 @@ EO.models.createfunc = function(i) {
         });
 
         var geometry = model.geometry;
-        console.log(geometry);
 
         var skinMesh = new THREE.SkinnedMesh( geometry, material );
 
@@ -65,7 +62,6 @@ EO.models.init = function() {
 
   EO.util.ajax('/assets/models/all', function(response) {
     EO.models.predefined = JSON.parse(response.responseText);
-    console.log(EO.models.predefined);
     //loop through all our predefined model json files
     for (var i = 0; i < EO.models.predefined.length; i++) {
       EO.models.preloads[i] = EO.models.createfunc(i);
@@ -78,14 +74,11 @@ EO.models.init = function() {
 EO.models.addToWorld = function(model_id, name) {
 
   if (typeof EO.models.library[model_id] === 'undefined') {
-    console.log('the model id was undefined!!!');
     return;
   }
 
   var model = {};
   model.mesh = EO.models.library[model_id].clone(true);
-
-  console.log(model.mesh.geometry);
 
   //textures
   var texture = EO.globalTexture;

@@ -16,12 +16,29 @@ EO.server.socket.on('chat', function (data) {
     "class":"chat"
   }).html(data.user + ': ' + data.message);
   $('#feed').append($output);
-  $('#feed').scrollTop($('#feed').height());
+  $('#feed').scrollTop($('#feed')[0].scrollHeight);
+});
+
+EO.server.socket.on('oopsy', function (data) {
+  var $output = $('<div></div>').attr({
+    "class":"error"
+  }).html(data.message);
+  $('#feed').append($output);
+  $('#feed').scrollTop($('#feed')[0].scrollHeight);
 });
 
 EO.server.socket.on('join', function(data) {
   console.log('firing up the engine');
-  EO.init();
+  var modules = [
+    EO.three.init,
+    EO.models.init,
+    //EO.character.init(),
+    EO.tiles.init,
+    //EO.map.init(),
+    EO.input.init,
+    EO.render,
+  ];
+  EO.init(modules);
 });
 
 EO.server.socket.on('update', function(data) {
@@ -30,7 +47,7 @@ EO.server.socket.on('update', function(data) {
 
 EO.server.socket.on('chunk', function(data) {
   EO.map.HandleChunk(data.chunk);
-})
+});
 
 EO.server.isServerObject = function(object) {
   var objects = EO.server.data.localView.players;

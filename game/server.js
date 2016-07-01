@@ -11,6 +11,7 @@
  *
  */
 
+var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
 var Maps = require('../db/maps.js');
 var Assets = require('../db/assets.js');
@@ -51,6 +52,13 @@ SERVER.db.fetchUser = function(socket, callback) {
 
     callback(user);
 
+  });
+}
+
+SERVER.db.fetchUserAccess = function(user_id, callback) {
+  new Users({ id: user_id }).fetch().then(function(model) {
+    var user = model.toJSON();
+    callback(user.access);
   });
 }
 
@@ -277,7 +285,33 @@ SERVER.socket = function(data) {
         socket.broadcast.emit(SERVER.players.data[socket.id].name + ' has joined the room!');
         //chat handler
         socket.on('chat', function (data) {
-          io.emit('chat', { user: socket.request.user.username, message: data.message });
+          if ( ! SERVER.chatCommands.check(data.message) ) {
+            io.emit('chat', { user: socket.request.user.username, message: data.message });
+          } else {
+            SERVER.chatCommands.parse(socket.request.user.id, data.message, function(response) {
+
+              if (typeof response == 'undefined' || typeof response.rType === 'undefined' || typeof response.rKey === 'undefined' || typeof response.rVal === 'undefined') {
+                console.log('chat command handler returned empty response or empty rType or empty rKey or empty rValue:');
+                console.log(response);
+                return false;
+              }
+
+              var type = response.rType;
+              var key = response.rKey;
+              var val = response.rVal;
+
+              var responseObject = {};
+              responseObject[key] = val;
+
+              if (response.rTarget === "global") {
+                io.emit( type, { key, val } );
+              } else {
+                console.log(type+', '+key+', '+val);
+                socket.emit( type, responseObject );
+              }
+
+            });
+          }
         });
         //input handler
         socket.on('input', function (data) {
@@ -305,6 +339,92 @@ SERVER.socket = function(data) {
 
 }
 
+///////////////////
+// chat commands //
+///////////////////
+SERVER.chatCommands = {};
+SERVER.chatCommands.check = function(msg) {
+
+  if (msg.substring(0,1) === "/")
+    return true;
+
+  return false;
+
+}
+SERVER.chatCommands.parse = function(user_id, cmd, callback) {
+
+  var string = cmd.split('/')[1];
+  var args = string.split(' ');
+  var cmd = args.shift();
+
+  //invalid command
+  if (typeof SERVER.chatCommands.dictionary[cmd] === 'undefined') {
+    console.log('returning error');
+    return callback({
+      rType: 'oopsy',
+      rKey: 'message',
+      rVal: '/'+cmd+' is not a valid command!'
+    });
+  }
+
+  var command = SERVER.chatCommands.dictionary[cmd];
+
+  //access check
+  if (command.access) {
+    SERVER.db.fetchUserAccess(user_id, function(user_access) {
+      if (user_access < command.access) {
+        return callback({
+          rType: 'oopsy',
+          rKey: 'message',
+          rVal: 'You do not have that kind of power, asshole!!'
+        });
+      } else {
+
+        return SERVER.chatCommands.perform(cmd, callback);
+
+      }
+    });
+  } else {
+
+    return SERVER.chatCommands.perform(cmd, callback);
+
+  }
+
+}
+
+SERVER.chatCommands.perform = function(command, callback) {
+
+  if (command.action) {
+
+    command.action(args, function() {
+      return callback(command.response);
+    });
+
+  } else {
+
+    return callback(command.response);
+
+  }
+
+}
+
+SERVER.chatCommands.dictionary = {
+  test: {
+    access: 11,
+    action: function(args, callback) {
+      callback();
+    },
+    response: {
+      rType: 'admin',
+      rKey: 'message',
+      rVal: 'This worked, ya big dummy!'
+    }
+  }
+}
+
+/////////
+// map //
+/////////
 SERVER.map = {};
 
 SERVER.map.chunk = {};

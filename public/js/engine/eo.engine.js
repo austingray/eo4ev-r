@@ -3,14 +3,10 @@ var EO = EO || {};
 //////////////////////////////////////////////////
 // Init called when signal received from server //
 //////////////////////////////////////////////////
-EO.init = function() {
-  EO.three.init();
-  EO.models.init();
-  //EO.character.init();
-  EO.tiles.init();
-  //EO.map.init();
-  EO.input.init();
-  EO.render();
+EO.init = function(modules) {
+  for (var i = 0; i < modules.length; i++) {
+    modules[i]();
+  }
 }
 
 ////////////////////
@@ -27,7 +23,7 @@ EO.render = function() {
   EO.settings.frame = f;
   //input updates
   EO.input.keyboard.update();
-  EO.input.mouse.update();
+  EO.input.mouse.update(EO.input.mouse.modules);
   //animation mixer update
   if (EO.three.mixer) EO.three.mixer.update( delta );
   //render frame
