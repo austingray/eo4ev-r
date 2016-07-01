@@ -32,14 +32,14 @@ SERVER.db.fetchUser = function(socket, callback) {
     var user_data = model.toJSON();
     console.log(user_data);
     if (user_data.current_model == null) {
-      var current_model_name = 7;
+      var current_model_name = 1;
     } else {
       var current_model_name = user_data.current_model;
     }
 
     var user = {};
     user.name = user_data.name;
-    user.current_model = 7;
+    user.current_model = current_model_name;
     user.hsl = {};
     user.hsl.h = user_data.hue;
     user.hsl.s = user_data.saturation;

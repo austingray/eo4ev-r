@@ -20,7 +20,6 @@ EO.models.createfunc = function(i) {
     var loader = new THREE.ObjectLoader();
     loader.load( window.location.origin + '/' + EO.models.predefined[i].file_url.split('public/')[1], function(object) {
       //our model
-      console.log('here0');
       var model = object.children[0];
 
       //if (predefined.id === 'hero') {

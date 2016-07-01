@@ -110,7 +110,7 @@ router.get('/assets', function(req, res, next) {
   });
 });
 
-router.get('/assets/add', function(req, res, next) {
+router.get('/assets/update', function(req, res, next) {
   validateAdmin(req, res, function() {
 
     //get all assets, asset types, asset categories
@@ -122,7 +122,7 @@ router.get('/assets/add', function(req, res, next) {
           var assets = model.toJSON();
 
           //set our res_object
-          res_object.section = 'assets_add';
+          res_object.section = 'assets_update';
           res_object.asset_types = asset_types;
           res_object.asset_categories = asset_categories;
           res_object.assets = assets;
@@ -138,7 +138,18 @@ router.get('/assets/add', function(req, res, next) {
   });
 });
 
-router.post('/assets/add', upload.single('asset_file'), function(req, res, next) {
+router.get('/assets/delete/:id', function(req, res, next) {
+  validateAdmin(req, res, function() {
+
+    new Assets({ id: sanitize( req.params.id ) }).destroy().then(function(model) {
+      console.log(model.toJSON);
+      res.redirect('/datadmindoe/assets');
+    })
+
+  });
+});
+
+router.post('/assets/update', upload.single('asset_file'), function(req, res, next) {
   validateAdmin(req, res, function() {
 
     //setup vars

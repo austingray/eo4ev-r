@@ -42,13 +42,32 @@ block content
 
 
     if section === 'assets'
-      a(href='/datadmindoe/assets/add') Add New Asset
+      a(href='/datadmindoe/assets/update') Add New Asset
       div(id='admin-list')
-        each a in assets
-          div(class='asset-row', data-resource-url=a.resource_file_url)
-            span #{a.name} - #{a.asset_type.name} - #{a.asset_category.name}
+        table
+          thead
+            tr
+              th Asset ID
+              th Asset Name
+              th Asset Type
+              th Asset Category
+              th Asset Url
+              th Update
+              th Delete
+          tbody
+            each a in assets
+                tr
+                  td #{a.id}
+                  td #{a.name}
+                  td #{a.asset_type.name}
+                  td #{a.asset_category.name}
+                  td #{a.file_url}
+                  td
+                    a(href='/datadmindoe/assets/update/'+a.id) Update
+                  td
+                    a(href='/datadmindoe/assets/delete/'+a.id) Delete
 
-    if section === 'assets_add'
+    if section === 'assets_update'
       form(role='form', name='add_asset', method='post', enctype="multipart/form-data")
         div(class='row')
           label(for='asset_name') Name
