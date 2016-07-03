@@ -29,16 +29,7 @@ EO.server.socket.on('oopsy', function (data) {
 
 EO.server.socket.on('join', function(data) {
   console.log('firing up the engine');
-  var modules = [
-    EO.three.init,
-    EO.models.init,
-    //EO.character.init(),
-    EO.tiles.init,
-    //EO.map.init(),
-    EO.input.init,
-    EO.render,
-  ];
-  EO.init(modules);
+  EO.preload(data.chunk);
 });
 
 EO.server.socket.on('update', function(data) {

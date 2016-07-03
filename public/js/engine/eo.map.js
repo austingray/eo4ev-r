@@ -11,7 +11,7 @@ EO.map.init = function() {
 
 }
 EO.map.chunk = function() {
-  
+
 }
 EO.map.draw = function() {
 
@@ -20,16 +20,51 @@ EO.map.update = function() {
 
 }
 EO.map.HandleChunk = function(chunk) {
-  
+
+  if (Object.keys(EO.tiles.library).length === 0 && EO.tiles.library.constructor === Object) {
+    return setTimeout(function() {
+      EO.map.HandleChunk(chunk);
+    }, 333)
+  }
+
+  console.log('the tile library:');
+  console.log(EO.tiles.library);
+
+
   var chunkGeometry = new THREE.Geometry();
 
+  var materialListDictionary = [];
+  var materialListIndex = [];
+
   for (var i = 0; i < chunk.length; i++) {
+
+
+    if (chunk[i].tile_id > 0) {
+      console.log(chunk[i]);
+    }
 
     var height = 64 * chunk[i].height;
     if (height === 0) height = 1;
 
     var geometry = new THREE.PlaneGeometry( 64, 64 );
-    var material = EO.tiles.materials[chunk[i].tile_id].clone(true);
+    if (typeof EO.tiles.library[chunk[i].tile_id] === 'undefined') {
+
+      var material = new THREE.MeshPhongMaterial( { color: 0x001111, vertexColors: true } );
+
+    } else {
+
+      var material = EO.tiles.library[chunk[i].tile_id].clone(true);
+      console.log('cloned a material');
+      console.log(material);
+
+    }
+
+    if (materialListIndex.indexOf(chunk[i].tile_id) < 0) {
+
+      materialListIndex.push(chunk[i].tile_id);
+      materialListDictionary[chunk[i].tile_id] = material;
+    }
+
     var mesh = new THREE.Mesh( geometry, material );
     mesh.receiveShadow = true;
     mesh.position.set( chunk[i].x * 64, chunk[i].y * 64, 0 );
@@ -39,8 +74,9 @@ EO.map.HandleChunk = function(chunk) {
 
   }
 
+  console.log(materialListDictionary);
   //var materials = new THREE.MeshPhongMaterial({color: 0x000000});
-  var chunk = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( [ EO.tiles.materials[0], EO.tiles.materials[1] ] ) );
+  var chunk = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( materialListDictionary ) );
   chunk.receiveShadow = true;
   chunk.material.vertexColors = THREE.FaceColors;
   console.log(chunk);

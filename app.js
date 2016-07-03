@@ -146,9 +146,11 @@ function onAuthorizeSuccess(data, accept){
 }
 
 function onAuthorizeFail(data, message, error, accept){
-  if(error)
+  if(error) {
     throw new Error(message);
-  console.log('failed connection to socket.io:', message);
+    console.log('failed connection to socket.io:', message);
+    return false;
+  }
 
   // We use this callback to log all of our failed connections.
   accept(null, false);
@@ -157,7 +159,7 @@ function onAuthorizeFail(data, message, error, accept){
 
   // If you use socket.io@1.X the callback looks different
   // If you don't want to accept the connection
-  if(error)
+  if (error)
     accept(new Error(message));
   // this error will be sent to the user as a special error-package
   // see: http://socket.io/docs/client-api/#socket > error-object

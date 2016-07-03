@@ -9,6 +9,50 @@ EO.init = function(modules) {
   }
 }
 
+EO.preloaded = false;
+EO.preload = function(chunk) {
+
+  if (typeof EO.tiles.predefined == 'undefined') {
+    console.log('init tiles');
+    EO.tiles.init();
+    setTimeout(function() {
+      return EO.preload(chunk);
+    }, 33);
+  }
+  if (typeof EO.models.predefined == 'undefined') {
+    console.log('init models');
+    EO.models.init();
+    setTimeout(function() {
+      return EO.preload(chunk);
+    }, 33);
+  }
+
+  console.log('init models: ');
+  console.log(EO.models.predefined);
+  console.log('init tiles: ');
+  console.log(EO.tiles.predefined);
+
+  if (EO.preloaded) return false;
+
+  EO.preloaded = true;
+  console.log('for some reason i passed');
+
+  var modules = [
+    EO.three.init,
+    EO.models.init,
+    //EO.character.init(),
+    EO.tiles.init,
+    //EO.map.init(),
+    EO.input.init,
+    EO.render,
+  ];
+
+  EO.init(modules);
+
+  EO.map.HandleChunk(chunk);
+
+}
+
 ////////////////////
 // Dat render doe //
 ////////////////////

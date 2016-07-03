@@ -60,7 +60,7 @@ EO.models.createfunc = function(i) {
 }
 EO.models.init = function() {
 
-  EO.util.ajax('/assets/models/all', function(response) {
+  EO.util.ajax('/assets/models/all', 'GET', function(response) {
     EO.models.predefined = JSON.parse(response.responseText);
     //loop through all our predefined model json files
     for (var i = 0; i < EO.models.predefined.length; i++) {

@@ -2,7 +2,7 @@
 // EO Utilities //
 //////////////////
 EO.util = {};
-EO.util.ajax = function(url, callback) {
+EO.util.ajax = function(url, type, callback) {
 
   var xhr;
 
@@ -37,6 +37,6 @@ EO.util.ajax = function(url, callback) {
     }
   }
 
-  xhr.open('GET', url, true);
+  xhr.open(type, url, true);
   xhr.send('');
 };

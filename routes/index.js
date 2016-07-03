@@ -11,6 +11,8 @@ var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
 var Posts = require('../db/posts.js');
 var Assets = require('../db/assets.js');
+var Maps = require('../db/maps.js');
+var Tiles = require('../db/tiles.js');
 
 ///////////////
 // Home page //
@@ -98,7 +100,50 @@ router.get('/assets/models/all', function(req, res, next) {
   }).fetchAll().then(function(assets) {
     res.json(assets.toJSON());
   });
-})
+});
+
+router.get('/assets/tiles/all', function(req, res, next) {
+  new Tiles().fetchAll({ withRelated: ['asset'] }).then(function(model) {
+    res.json(model.toJSON());
+  })
+  // Tiles.query(function(qb) {
+  //   qb.where('asset_type_id', '=', 2)
+  //     .andWhere('asset_category_id', '=', 3)
+  // }).fetchAll().then(function(assets) {
+  //
+  // });
+});
+
+//map request
+router.post('/map/update', function(req, res, next) {
+  if (req.user && req.user.access > 1) {
+    new Characters({id: req.user.current_character}).fetch().then(function(model) {
+      var char = model.toJSON();
+      var char_pos = char.position;
+      var tile_x = Math.floor( (Number(sanitize(req.body.x)) + Number(char_pos.x)) / 64 );
+      var tile_y = Math.floor( (Number(sanitize(req.body.y)) + Number(char_pos.y)) / 64 );
+      Maps.query(function(qb) {
+        qb.where('x', '=', tile_x)
+          .andWhere('y', '=', tile_y)
+      }).fetch().then(function(model) {
+        if (model == null) {
+          new Maps({ x: tile_x, y: tile_y, height: 0, blocking: false, tile_id: Number(sanitize(req.body.tile_id)) }).save().then(function(map_tile) {
+            console.log(map_tile.toJSON());
+          })
+        } else {
+          var map = model.toJSON();
+          var map_id = map.id;
+          new Maps({ id: map_id }).save({
+            tile_id: Number( sanitize( req.body.tile_id ) )
+          }, {patch: true}).then(function(model) {
+            console.log(model.toJSON);
+            res.send('done');
+          });
+        }
+      })
+    });
+  }
+});
 
 //////////////////////////////////////////////////////////////////////////////////////
 //helper function to convert username to lowercase and check if it is already taken //

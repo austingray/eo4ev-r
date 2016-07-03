@@ -31,7 +31,6 @@ SERVER.db.fetchUser = function(socket, callback) {
     }
 
     var user_data = model.toJSON();
-    console.log(user_data);
     if (user_data.current_model == null) {
       var current_model_name = 1;
     } else {
@@ -69,6 +68,8 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
 
   new Maps().inRectangle({ x: chunkRect.x, y: chunkRect.y, width: chunkRect.width, height: chunkRect.height }).fetchAll().then(function(model) {
     var results = model.toJSON();
+    console.log('orig results');
+    console.log(results);
     if (results.length < SERVER.map.chunk.size*SERVER.map.chunk.size) {
 
       //patch missing values
@@ -87,19 +88,20 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
               tile_exists_in_db = true;
               db_tile = results[k];
             }
-          }
-
-          if (tile_exists_in_db) {
-            patched.push(db_tile)
-          } else {
-            patched.push({
-              id: 0,
-              x: test_x,
-              y: test_y,
-              height: 0,
-              blocking: false,
-              tile_id: 0
-            });
+            if (tile_exists_in_db) {
+              patched.push(db_tile);
+              console.log('pushed');
+              console.log(db_tile);
+            } else {
+              patched.push({
+                id: 0,
+                x: test_x,
+                y: test_y,
+                height: 0,
+                blocking: false,
+                tile_id: 0
+              });
+            }
           }
 
         }
@@ -272,9 +274,9 @@ SERVER.socket = function(data) {
       //send join notice plus first chunk
       SERVER.map.GetChunk(socket, function (chunkData) {
         //emit 'join' tells client to EO.init();
-        socket.emit('join');
+        socket.emit('join', { chunk: chunkData });
         //send map chunk
-        socket.emit('chunk', { chunk: chunkData });
+        //socket.emit('chunk', { chunk: chunkData });
         //player logged in message
         io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
         //join unique channel
@@ -380,13 +382,13 @@ SERVER.chatCommands.parse = function(user_id, cmd, callback) {
         });
       } else {
 
-        return SERVER.chatCommands.perform(cmd, callback);
+        return SERVER.chatCommands.perform(command, callback);
 
       }
     });
   } else {
 
-    return SERVER.chatCommands.perform(cmd, callback);
+    return SERVER.chatCommands.perform(command, callback);
 
   }
 
@@ -409,8 +411,9 @@ SERVER.chatCommands.perform = function(command, callback) {
 }
 
 SERVER.chatCommands.dictionary = {
+
   test: {
-    access: 11,
+    access: 10,
     action: function(args, callback) {
       callback();
     },
@@ -419,7 +422,17 @@ SERVER.chatCommands.dictionary = {
       rKey: 'message',
       rVal: 'This worked, ya big dummy!'
     }
+  },
+
+  map: {
+    access: 2,
+    response: {
+      rType: 'mapeditor',
+      rKey: 'message',
+      rVal: 'Starting dat map editor'
+    }
   }
+
 }
 
 /////////
