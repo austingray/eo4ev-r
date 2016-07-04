@@ -27,15 +27,9 @@ EO.preload = function(chunk) {
     }, 33);
   }
 
-  console.log('init models: ');
-  console.log(EO.models.predefined);
-  console.log('init tiles: ');
-  console.log(EO.tiles.predefined);
-
   if (EO.preloaded) return false;
 
   EO.preloaded = true;
-  console.log('for some reason i passed');
 
   var modules = [
     EO.three.init,
@@ -48,9 +42,6 @@ EO.preload = function(chunk) {
   ];
 
   EO.init(modules);
-
-  console.log('preload chunk:');
-  console.log(chunk);
 
   EO.map.HandleChunk(chunk);
 
@@ -99,7 +90,6 @@ EO.update = function() {
   //add new players
   for (var k = 0; k < EO.server.data.localView.players.length; k++) {
     if ( ! EO.world.isActiveObject( EO.server.data.localView.players[k].name) ) {
-      //console.log(  EO.server.data.localView.players[k] );
       EO.models.addToWorld( EO.server.data.localView.players[k].current_model, EO.server.data.localView.players[k].name );
     }
   }

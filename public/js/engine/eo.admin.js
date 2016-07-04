@@ -4,10 +4,8 @@ EO.admin.sockets = {};
 EO.admin.sockets.init = function() {
   EO.server.socket.on('mapeditor', function(response) {
     if (EO.admin.mapEditor.active) {
-      console.log('deactivating map editor');
       EO.admin.mapEditor.deactivate();
     } else {
-      console.log('activating map editor');
       EO.admin.mapEditor.activate();
     }
   });

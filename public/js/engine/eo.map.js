@@ -23,7 +23,6 @@ EO.map.update = function() {
 EO.map.HandleChunk_new = function(chunk) {
 
   if (Object.keys(EO.tiles.library).length === 0 && EO.tiles.library.constructor === Object) {
-    console.log('waiting for tiles to load');
     return setTimeout(function() {
       EO.map.HandleChunk(chunk);
     }, 333)
@@ -36,12 +35,9 @@ EO.map.HandleChunk_new = function(chunk) {
   var l = geometry.faces.length / 2;
   for (var i = 0; i < l; i++) {
     var j = 2 * i;
-    console.log(chunk[i].tile_id);
     geometry.faces[j].materialIndex = chunk[i].tile_id;
     geometry.faces[j + 1].materialIndex = chunk[i].tile_id;
   }
-  console.log(l);
-  console.log(chunk);
 
   var mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
 
@@ -51,10 +47,7 @@ EO.map.HandleChunk_new = function(chunk) {
 
 EO.map.HandleChunk = function(chunkObj) {
 
-  console.log(chunkObj);
-
   if (Object.keys(EO.tiles.library).length === 0 && EO.tiles.library.constructor === Object) {
-    console.log('waiting for tiles to load');
     return setTimeout(function() {
       EO.map.HandleChunk(chunkObj);
     }, 333)
@@ -62,13 +55,6 @@ EO.map.HandleChunk = function(chunkObj) {
 
   var chunk = chunkObj.data;
   var offset = chunkObj.offset;
-
-  console.log('dat offset doe');
-  console.log(offset);
-
-  console.log('the tile library:');
-  console.log(EO.tiles.library);
-
 
   var chunkGeometry = new THREE.Geometry();
 

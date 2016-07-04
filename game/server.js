@@ -68,12 +68,7 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
 
   new Maps().inRectangle({ x: chunkRect.x, y: chunkRect.y, width: chunkRect.width, height: chunkRect.height }).fetchAll().then(function(model) {
     var results = model.toJSON();
-    console.log('orig results');
-    console.log(results.length);
     if (results.length < SERVER.map.chunk.size*SERVER.map.chunk.size) {
-
-      console.log('dat chunkRect doe');
-      console.log(chunkRect);
 
       //patch missing values
       var patched = [];
@@ -109,9 +104,6 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
 
         }
       }
-
-      console.log('dat patched length doe');
-      console.log(patched.length);
 
       //console.log(patched);
       callback(patched);
@@ -155,7 +147,6 @@ SERVER.db.updateTile = function(user_id, tile, callback) {
             new Maps({ id: map_id }).save({
               tile_id: Number( tile.tile_id )
             }, {patch: true}).then(function(model) {
-              console.log(model.toJSON);
               callback();
             });
           }
@@ -195,7 +186,6 @@ SERVER.players.delete = function(socket) {
     z: position.z
   };
 
-  console.log(char_id);
   new Characters({ id: char_id }).save({ position: JSON.stringify({ x: position.x, y: position.y, z: position.z }) }, { patch: true }).then(function(model) {
     var index = SERVER.players.index.indexOf(socket.id);
     if (index > -1) {
@@ -322,7 +312,6 @@ SERVER.socket = function(data) {
       //send join notice plus first chunk
       SERVER.map.GetChunk(socket, function (chunkData) {
 
-        console.log(SERVER.players.data[socket.id].view.pos);
         var chunkObj = {
           data: chunkData,
           offset: SERVER.players.data[socket.id].view.pos

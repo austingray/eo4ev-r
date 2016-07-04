@@ -28,9 +28,6 @@ EO.server.socket.on('oopsy', function (data) {
 });
 
 EO.server.socket.on('join', function(data) {
-  console.log('firing up the engine');
-  console.log(data);
-  //EO.map.HandleChunk(data.chunk.data, data.chunk.offset);
   EO.preload(data.chunk);
 });
 
@@ -39,7 +36,6 @@ EO.server.socket.on('update', function(data) {
 });
 
 EO.server.socket.on('chunk', function(data) {
-  console.log('anoter CHUNK!!!');
   if (data.chunk.clear === true) {
     EO.three.scene.traverse( function (object) {
       if (object.name === "chunk") {
