@@ -19,13 +19,52 @@ EO.map.draw = function() {
 EO.map.update = function() {
 
 }
-EO.map.HandleChunk = function(chunk) {
+
+EO.map.HandleChunk_new = function(chunk) {
 
   if (Object.keys(EO.tiles.library).length === 0 && EO.tiles.library.constructor === Object) {
+    console.log('waiting for tiles to load');
     return setTimeout(function() {
       EO.map.HandleChunk(chunk);
     }, 333)
+  };
+
+  var geometry = new THREE.PlaneGeometry(6400, 6400, 100, 100);
+  EO.tiles.library["0"] = new THREE.MeshPhongMaterial( { color: 0x001111, vertexColors: true } );
+  var materials = EO.tiles.library;
+
+  var l = geometry.faces.length / 2;
+  for (var i = 0; i < l; i++) {
+    var j = 2 * i;
+    console.log(chunk[i].tile_id);
+    geometry.faces[j].materialIndex = chunk[i].tile_id;
+    geometry.faces[j + 1].materialIndex = chunk[i].tile_id;
   }
+  console.log(l);
+  console.log(chunk);
+
+  var mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+
+  EO.three.scene.add(mesh);
+
+}
+
+EO.map.HandleChunk = function(chunkObj) {
+
+  console.log(chunkObj);
+
+  if (Object.keys(EO.tiles.library).length === 0 && EO.tiles.library.constructor === Object) {
+    console.log('waiting for tiles to load');
+    return setTimeout(function() {
+      EO.map.HandleChunk(chunkObj);
+    }, 333)
+  }
+
+  var chunk = chunkObj.data;
+  var offset = chunkObj.offset;
+
+  console.log('dat offset doe');
+  console.log(offset);
 
   console.log('the tile library:');
   console.log(EO.tiles.library);
@@ -36,37 +75,36 @@ EO.map.HandleChunk = function(chunk) {
   var materialListDictionary = [];
   var materialListIndex = [];
 
+  var geometry = new THREE.PlaneGeometry( 64, 64 );
+  var material = new THREE.MeshPhongMaterial( { color: 0x001111, vertexColors: true } );
+  //var material_texture = EO.tiles.library[chunk[i].tile_id].clone(true);
+  var material_texture = new THREE.MeshPhongMaterial();
+  var mesh = new THREE.Mesh( geometry, material );
+
   for (var i = 0; i < chunk.length; i++) {
 
+    // var height = 64 * chunk[i].height;
+    // if (height === 0) height = 1;
 
-    if (chunk[i].tile_id > 0) {
-      console.log(chunk[i]);
-    }
-
-    var height = 64 * chunk[i].height;
-    if (height === 0) height = 1;
-
-    var geometry = new THREE.PlaneGeometry( 64, 64 );
     if (typeof EO.tiles.library[chunk[i].tile_id] === 'undefined') {
 
-      var material = new THREE.MeshPhongMaterial( { color: 0x001111, vertexColors: true } );
+      mesh.material = material;
 
     } else {
 
-      var material = EO.tiles.library[chunk[i].tile_id].clone(true);
-      console.log('cloned a material');
-      console.log(material);
+      mesh.material = EO.tiles.library[chunk[i].tile_id].clone(true);
 
     }
 
     if (materialListIndex.indexOf(chunk[i].tile_id) < 0) {
 
       materialListIndex.push(chunk[i].tile_id);
-      materialListDictionary[chunk[i].tile_id] = material;
+      materialListDictionary[chunk[i].tile_id] = mesh.material;
+
     }
 
-    var mesh = new THREE.Mesh( geometry, material );
-    mesh.receiveShadow = true;
+
+
     mesh.position.set( chunk[i].x * 64, chunk[i].y * 64, 0 );
     mesh.updateMatrix();
 
@@ -74,15 +112,12 @@ EO.map.HandleChunk = function(chunk) {
 
   }
 
-  console.log(materialListDictionary);
-  //var materials = new THREE.MeshPhongMaterial({color: 0x000000});
+  chunkGeometry.sortFacesByMaterialIndex();
+  //var bufferGeo = new THREE.BufferGeometry().fromGeometry(chunkGeometry);
   var chunk = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( materialListDictionary ) );
-  chunk.receiveShadow = true;
-  chunk.material.vertexColors = THREE.FaceColors;
-  console.log(chunk);
-  chunk.geometry.computeFaceNormals();
-  chunk.geometry.computeVertexNormals();
   chunk.name = "Chunk"
+  //chunk.position.set(offset.x, offset.y, 0);
+
   EO.three.scene.add(chunk);
 
 }

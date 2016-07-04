@@ -49,6 +49,9 @@ EO.preload = function(chunk) {
 
   EO.init(modules);
 
+  console.log('preload chunk:');
+  console.log(chunk);
+
   EO.map.HandleChunk(chunk);
 
 }

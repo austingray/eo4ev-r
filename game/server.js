@@ -69,8 +69,11 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
   new Maps().inRectangle({ x: chunkRect.x, y: chunkRect.y, width: chunkRect.width, height: chunkRect.height }).fetchAll().then(function(model) {
     var results = model.toJSON();
     console.log('orig results');
-    console.log(results);
+    console.log(results.length);
     if (results.length < SERVER.map.chunk.size*SERVER.map.chunk.size) {
+
+      console.log('dat chunkRect doe');
+      console.log(chunkRect);
 
       //patch missing values
       var patched = [];
@@ -80,32 +83,35 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
 
           var test_x = chunkRect.x + i;
           var test_y = chunkRect.y + j;
+
           var db_tile = {};
+          var tile_exists_in_db = false;
 
           for (k = 0; k < results.length; k++) {
-            var tile_exists_in_db = false;
             if (results[k].x === test_x && results[k].y === test_y) {
               tile_exists_in_db = true;
               db_tile = results[k];
             }
-            if (tile_exists_in_db) {
-              patched.push(db_tile);
-              console.log('pushed');
-              console.log(db_tile);
-            } else {
-              patched.push({
-                id: 0,
-                x: test_x,
-                y: test_y,
-                height: 0,
-                blocking: false,
-                tile_id: 0
-              });
-            }
+          }
+
+          if (tile_exists_in_db) {
+            patched.push(db_tile);
+          } else {
+            patched.push({
+              id: 0,
+              x: test_x,
+              y: test_y,
+              height: 0,
+              blocking: false,
+              tile_id: 0
+            });
           }
 
         }
       }
+
+      console.log('dat patched length doe');
+      console.log(patched.length);
 
       //console.log(patched);
       callback(patched);
@@ -119,6 +125,46 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
     }
   });
 
+}
+
+SERVER.db.updateTile = function(user_id, tile, callback) {
+  SERVER.db.fetchUserAccess(user_id, function(user_access) {
+
+    if (user_access > 2) {
+
+      // new Characters({id: req.user.current_character}).fetch().then(function(model) {
+        // var char = model.toJSON();
+        // var char_pos = char.position;
+        // console.log('req: ' + req.body.x + ', char: ' + char_pos.x);
+        // console.log('req: ' + req.body.y + ', char: ' + char_pos.y);
+        // var tile_x = Math.floor( ( Number(char_pos.x) + Number(sanitize(req.body.x)) ) / 64 );
+        // var tile_y = Math.floor( ( Number(char_pos.y) + Number(sanitize(req.body.y)) ) / 64 );
+        var tile_x = Math.floor( Number(tile.x) / 64 );
+        var tile_y = Math.floor( Number(tile.y) / 64 );
+        Maps.query(function(qb) {
+          qb.where('x', '=', tile_x)
+            .andWhere('y', '=', tile_y)
+        }).fetch().then(function(model) {
+          if (model == null) {
+            new Maps({ x: tile_x, y: tile_y, height: 0, blocking: false, tile_id: Number(tile.tile_id) }).save().then(function(map_tile) {
+              callback();
+            });
+          } else {
+            var map = model.toJSON();
+            var map_id = map.id;
+            new Maps({ id: map_id }).save({
+              tile_id: Number( tile.tile_id )
+            }, {patch: true}).then(function(model) {
+              console.log(model.toJSON);
+              callback();
+            });
+          }
+        })
+      // });
+
+    }
+
+  });
 }
 
 ////////////////////////////////////////
@@ -166,19 +212,21 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
 
   var walking = false;
   var cRot;
-  var mSpeed = 1.55;
+  var speedMulti = 1;
+  var mSpeed = 1.55 * speedMulti;
+  var mSpeedDiag = 1 * speedMulti;
   var cUp = inputs[0]; var cRight = inputs[1]; var cDown = inputs[2]; var cLeft = inputs[3];
   var pos = { x: 0, y: 0, z: 0 };
 
   if (cDown) { cRot = 0; walking = true; }
   if (cUp) { cRot = 3.20; walking = true; }
   if (cLeft) { cRot = -1.6; walking = true;
-    if (cDown) { cRot = -0.8; mSpeed = 1; }
-    if (cUp) { cRot = -2.4; mSpeed = 1; }
+    if (cDown) { cRot = -0.8; mSpeed = mSpeedDiag; }
+    if (cUp) { cRot = -2.4; mSpeed = mSpeedDiag; }
   }
   if (cRight) { cRot = 1.6; walking = true;
-    if (cDown) { cRot = 0.8; mSpeed = 1; }
-    if (cUp) { cRot = 2.4; mSpeed = 1; }
+    if (cDown) { cRot = 0.8; mSpeed = mSpeedDiag; }
+    if (cUp) { cRot = 2.4; mSpeed = mSpeedDiag; }
   }
   if (cDown) pos.y = pos.y - mSpeed;
   if (cUp) pos.y = pos.y + mSpeed;
@@ -273,10 +321,31 @@ SERVER.socket = function(data) {
 
       //send join notice plus first chunk
       SERVER.map.GetChunk(socket, function (chunkData) {
+
+        console.log(SERVER.players.data[socket.id].view.pos);
+        var chunkObj = {
+          data: chunkData,
+          offset: SERVER.players.data[socket.id].view.pos
+        };
         //emit 'join' tells client to EO.init();
-        socket.emit('join', { chunk: chunkData });
+        socket.emit('join', { chunk: chunkObj });
         //send map chunk
         //socket.emit('chunk', { chunk: chunkData });
+        //
+        socket.on('map_update', function(data) {
+          SERVER.db.updateTile(socket.request.user.id, data.tile, function() {
+            SERVER.map.GetChunk(socket, function (chunkData) {
+              var chunkObj = {
+                data: chunkData,
+                offset: SERVER.players.data[socket.id].view.pos,
+                clear: true
+              };
+
+              socket.emit('chunk', { chunk: chunkObj });
+            });
+          });
+        });
+        //
         //player logged in message
         io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
         //join unique channel
@@ -441,7 +510,7 @@ SERVER.chatCommands.dictionary = {
 SERVER.map = {};
 
 SERVER.map.chunk = {};
-SERVER.map.chunk.size = 100; //20 tiles x 20 tiles
+SERVER.map.chunk.size = 50; //20 tiles x 20 tiles
 
 SERVER.map.ChunkArrayFromCenterTileCoords = function (coords) {
 

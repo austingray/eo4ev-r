@@ -197,26 +197,27 @@ EO.admin.mapEditor.updateSelectedTile = function() {
       var x = intersects[0].point.x
       var y = intersects[0].point.y;
       var tile_id = $('.single-tile.active').attr("data-id");
-      var tile_update = {
+      var tile = {
         x: x,
         y: y,
         height: 0,
         blocking: false,
         tile_id: tile_id
       }
-      console.log(tile_update);
 
-      $.ajax({
-        method: "POST",
-        url: "/map/update",
-        data: tile_update,
-        success: function(data) {
-          console.log(data);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-          console.log(textStatus);
-        }
-      })
+      EO.server.socket.emit('map_update', { tile: tile });
+
+      // $.ajax({
+      //   method: "POST",
+      //   url: "/map/update",
+      //   data: tile_update,
+      //   success: function(data) {
+      //     console.log(data);
+      //   },
+      //   error: function(jqXHR, textStatus, errorThrown) {
+      //     console.log(textStatus);
+      //   }
+      // })
 
     }
 

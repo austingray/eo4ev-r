@@ -65,7 +65,7 @@ EO.tiles.createfunc = function(i) {
 
     var tLoader = new THREE.TextureLoader();
     var t = tLoader.load( asset_url );
-    var material = new THREE.MeshPhongMaterial({ map: t, vertexColors: true });
+    var material = new THREE.MeshPhongMaterial({ map: t });
     //var geometry = new THREE.PlaneGeometry( 64, 64, 1 );
 
     EO.tiles.library[predefined.id] = material;
