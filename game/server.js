@@ -348,7 +348,7 @@ SERVER.socket = function(data) {
           if ( ! SERVER.chatCommands.check(data.message) ) {
             io.emit('chat', { user: socket.request.user.username, message: data.message });
           } else {
-            SERVER.chatCommands.parse(socket.request.user.id, data.message, function(response) {
+            SERVER.chatCommands.parse(socket, data.message, function(response) {
 
               if (typeof response == 'undefined' || typeof response.rType === 'undefined' || typeof response.rKey === 'undefined' || typeof response.rVal === 'undefined') {
                 console.log('chat command handler returned empty response or empty rType or empty rKey or empty rValue:');
@@ -411,7 +411,7 @@ SERVER.chatCommands.check = function(msg) {
   return false;
 
 }
-SERVER.chatCommands.parse = function(user_id, cmd, callback) {
+SERVER.chatCommands.parse = function(socket, cmd, callback) {
 
   var string = cmd.split('/')[1];
   var args = string.split(' ');
@@ -431,6 +431,9 @@ SERVER.chatCommands.parse = function(user_id, cmd, callback) {
 
   //access check
   if (command.access) {
+
+    var user_id = socket.request.user.id;
+
     SERVER.db.fetchUserAccess(user_id, function(user_access) {
       if (user_access < command.access) {
         return callback({
@@ -440,24 +443,26 @@ SERVER.chatCommands.parse = function(user_id, cmd, callback) {
         });
       } else {
 
-        return SERVER.chatCommands.perform(command, callback);
+        return SERVER.chatCommands.perform(socket, command, callback);
 
       }
     });
   } else {
 
-    return SERVER.chatCommands.perform(command, callback);
+    return SERVER.chatCommands.perform(socket, command, callback);
 
   }
 
 }
 
-SERVER.chatCommands.perform = function(command, callback) {
+SERVER.chatCommands.perform = function(socket, command, callback) {
 
   if (command.action) {
 
-    command.action(args, function() {
+    command.action(socket, command.args, function(actionData) {
+
       return callback(command.response);
+
     });
 
   } else {
@@ -471,9 +476,9 @@ SERVER.chatCommands.perform = function(command, callback) {
 SERVER.chatCommands.dictionary = {
 
   test: {
-    access: 10,
-    action: function(args, callback) {
-      callback();
+    access: 11,
+    action: function(socket, args, callback) {
+      return callback();
     },
     response: {
       rType: 'admin',
@@ -488,6 +493,19 @@ SERVER.chatCommands.dictionary = {
       rType: 'mapeditor',
       rKey: 'message',
       rVal: 'Starting dat map editor'
+    }
+  },
+
+  position: {
+    action: function(socket, args, callback) {
+      var position = SERVER.players.data[socket.id].view.pos;
+      this.response.rVal = "x:" + Math.floor(position.x / 64) + ", y:"+Math.floor(position.y / 64);
+      callback();
+    },
+    response: {
+      rType: 'notice',
+      rKey: 'message',
+      rVal: 'Logged your pos in the console'
     }
   }
 

@@ -27,6 +27,14 @@ EO.server.socket.on('oopsy', function (data) {
   $('#feed').scrollTop($('#feed')[0].scrollHeight);
 });
 
+EO.server.socket.on('notice', function (data) {
+  var $output = $('<div></div>').attr({
+    "class":"notice"
+  }).html(data.message);
+  $('#feed').append($output);
+  $('#feed').scrollTop($('#feed')[0].scrollHeight);
+})
+
 EO.server.socket.on('join', function(data) {
   EO.preload(data.chunk);
 });
@@ -36,12 +44,18 @@ EO.server.socket.on('update', function(data) {
 });
 
 EO.server.socket.on('chunk', function(data) {
+  console.log(data.chunk.clear);
+  var deleteMe = [];
   if (data.chunk.clear === true) {
     EO.three.scene.traverse( function (object) {
-      if (object.name === "chunk") {
-        EO.world.deleteObject(object);
+      if (object.name === "Chunk") {
+        deleteMe.push(object);
       }
     });
+  }
+  while (deleteMe.length > 0) {
+    var deleteThis = deleteMe.shift();
+    EO.world.deleteObject(deleteThis);
   }
   EO.map.HandleChunk(data.chunk);
 });
