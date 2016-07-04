@@ -13,6 +13,7 @@ EO.world.createObject = function(object) {
 EO.world.deleteObject = function(object) {
 
   EO.three.scene.remove(object);
+  object = undefined;
 
   if (typeof EO.world.objects.active[object.name] !== 'undefined')
     delete EO.world.objects.active[object.name]
