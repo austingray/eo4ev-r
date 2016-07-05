@@ -202,7 +202,7 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
 
   var walking = false;
   var cRot;
-  var speedMulti = 1;
+  var speedMulti = 20;
   var mSpeed = 1.55 * speedMulti;
   var mSpeedDiag = 1 * speedMulti;
   var cUp = inputs[0]; var cRight = inputs[1]; var cDown = inputs[2]; var cLeft = inputs[3];
@@ -237,15 +237,32 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
     }
   }
 
-  var new_pos = { x: old_pos.x + pos.x, y: old_pos.y + pos.y, z: old_pos.z + pos.z };
+  var p = { x: old_pos.x + pos.x, y: old_pos.y + pos.y, z: old_pos.z + pos.z };
+
+  var updateChunk = false;
+  if (walking) {
+    //check for chunks
+    var c = SERVER.players.data[socket_id].lastChunk;
+
+    var left_edge = Math.abs(p.x / 64 - c.x);
+    var right_edge = Math.abs(Number(c.width) + c.x - p.x / 64);
+    var top_edge = Math.abs(Number(c.height) + c.y - p.y / 64);
+    var bottom_edge = Math.abs(p.y / 64 - c.y);
+
+    if (left_edge < 1 || right_edge < 1 || top_edge < 1 || bottom_edge < 1) {
+      var updateChunk = true;
+    }
+  }
 
   view = {
     walking: walking,
     rot: cRot,
-    pos: new_pos
+    pos: p
   };
 
   SERVER.players.data[socket_id].view = view;
+
+  return updateChunk;
 
 };
 
@@ -310,7 +327,10 @@ SERVER.socket = function(data) {
     SERVER.players.create(socket, function() {
 
       //send join notice plus first chunk
-      SERVER.map.GetChunk(socket, function (chunkData) {
+      SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+
+        //stash the coords of the last chunkRect to check against when to load the next one
+        SERVER.players.data[socket.id].lastChunk = chunkRect;
 
         var chunkObj = {
           data: chunkData,
@@ -323,7 +343,10 @@ SERVER.socket = function(data) {
         //
         socket.on('map_update', function(data) {
           SERVER.db.updateTile(socket.request.user.id, data.tile, function() {
-            SERVER.map.GetChunk(socket, function (chunkData) {
+            SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+
+              SERVER.players.data[socket.id].lastChunk = chunkRect;
+
               var chunkObj = {
                 data: chunkData,
                 offset: SERVER.players.data[socket.id].view.pos,
@@ -331,6 +354,7 @@ SERVER.socket = function(data) {
               };
 
               socket.emit('chunk', { chunk: chunkObj });
+
             });
           });
         });
@@ -375,7 +399,23 @@ SERVER.socket = function(data) {
         });
         //input handler
         socket.on('input', function (data) {
-          SERVER.players.updatePlayer(socket.id, data);
+          //player position gets updated in the if statement, retuns true/false if needs to update chunk
+          if ( SERVER.players.updatePlayer(socket.id, data) ) {
+            SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+
+              SERVER.players.data[socket.id].lastChunk = chunkRect;
+
+              var chunkObj = {
+                data: chunkData,
+                offset: SERVER.players.data[socket.id].view.pos,
+                clear: true
+              };
+
+              socket.emit('chunk', { chunk: chunkObj });
+
+            });
+          }
+
         });
 
       });
@@ -567,7 +607,7 @@ SERVER.map.GetChunk = function(socket, callback) {
 
   var chunkData = SERVER.db.FetchMapChunk(chunkRect, function(chunkData) {
 
-    callback(chunkData);
+    callback(chunkRect, chunkData);
 
   });
 

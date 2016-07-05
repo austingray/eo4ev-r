@@ -44,7 +44,6 @@ EO.server.socket.on('update', function(data) {
 });
 
 EO.server.socket.on('chunk', function(data) {
-  console.log(data.chunk.clear);
   var deleteMe = [];
   if (data.chunk.clear === true) {
     EO.three.scene.traverse( function (object) {

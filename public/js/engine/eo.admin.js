@@ -21,9 +21,11 @@ EO.admin.mapEditor.init = function() {
 EO.admin.mapEditor.active = false;
 EO.admin.mapEditor.activate = function() {
   EO.admin.mapEditor.active = true;
-  EO.input.mouse.modules.push(EO.admin.mapEditor.mouse.update);
+  //EO.input.mouse.modules.push(EO.admin.mapEditor.mouse.update);
   document.getElementById('gamecanvas').addEventListener( 'mousemove', EO.admin.mapEditor.mouse.onMouseMove, false );
-  document.getElementById('gamecanvas').addEventListener( 'click', EO.admin.mapEditor.updateSelectedTile, false );
+  //document.getElementById('gamecanvas').addEventListener( 'click', EO.admin.mapEditor.updateSelectedTile, false );
+  document.getElementById('gamecanvas').addEventListener( 'mousedown', EO.admin.mapEditor.createSelection, false );
+  document.getElementById('gamecanvas').addEventListener( 'mouseup', EO.admin.mapEditor.updateSelection, false );
   EO.admin.mapEditor.panel.create();
 }
 EO.admin.mapEditor.deactivate = function() {
@@ -33,49 +35,57 @@ EO.admin.mapEditor.deactivate = function() {
     EO.input.mouse.modules.splice(index, 1);
   }
   document.getElementById('gamecanvas').removeEventListener( 'mousemove', EO.admin.mapEditor.mouse.onMouseMove );
-  document.getElementById('gamecanvas').removeEventListener( 'click', EO.admin.mapEditor.updateSelectedTile );
+  //document.getElementById('gamecanvas').removeEventListener( 'click', EO.admin.mapEditor.updateSelectedTile );
+  document.getElementById('gamecanvas').removeEventListener( 'mousedown', EO.admin.mapEditor.createSelection, false );
+  document.getElementById('gamecanvas').removeEventListener( 'mouseup', EO.admin.mapEditor.updateSelection, false );
   EO.admin.mapEditor.panel.destroy();
 }
 
-EO.admin.mapEditor.panel = {};
-EO.admin.mapEditor.panel.activeTile = null;
-EO.admin.mapEditor.panel.init = function() {
-  $(document).on('click', '#map-editor-panel .single-tile', function() {
-    $('#map-editor-panel .single-tile').removeClass('active');
-    $(this).addClass('active');
-  });
-}
-EO.admin.mapEditor.panel.create = function() {
-  var $panel = $('<div></div>').attr({
-    "id":"map-editor-panel"
-  });
-  var $tile_container = $('<div></div>').attr({
-    "class":"tile-container"
-  });
-  for (var i = 0; i < EO.tiles.predefined.length; i++) {
-    var tile = EO.tiles.predefined[i];
-    var $img = $('<img />').attr({
-      "src": tile.asset.file_url.split('public/')[1]
-    });
-    var $tile = $('<div></div>').attr({
-      "class":"single-tile",
-      "data-id": tile.id
-    }).html($img);
-    $tile_container.append($tile);
+EO.admin.mapEditor.selection = {};
+EO.admin.mapEditor.selection.object;
+EO.admin.mapEditor.selection.active = false;
+EO.admin.mapEditor.createSelection = function() {
+
+  EO.admin.mapEditor.selection.active = true;
+
+  var geometry = new THREE.PlaneGeometry(64, 64);
+  var material = new THREE.MeshLambertMaterial({color: 0xffffff, transparent: true, opacity: 0.5});
+
+  EO.admin.mapEditor.selection.object = new THREE.Mesh(geometry, material);
+  EO.admin.mapEditor.selection.object.name = "Selection";
+
+  EO.admin.mapEditor.mouse.raycaster.setFromCamera( EO.admin.mapEditor.mouse.vector, EO.three.camera );
+
+  var intersects = EO.admin.mapEditor.mouse.raycaster.intersectObjects( EO.three.scene.children );
+
+  if ( intersects.length > 0 ) {
+
+
+
+    var x = Math.floor(intersects[0].point.x / 64) * 64
+    var y = Math.floor(intersects[0].point.y / 64) * 64;
+
+    EO.admin.mapEditor.selection.origin_x = x;
+    EO.admin.mapEditor.selection.origin_y = y;
+
+    EO.admin.mapEditor.selection.object.position.set(x, y, 0);
+
+    console.log(EO.admin.mapEditor.selection.object);
+
+    EO.three.scene.add( EO.admin.mapEditor.selection.object );
+
   }
-  $panel.append($tile_container);
-  var $blocking = $('<input />').attr({
-    "type":"checkbox",
-    "id":"is_blocking"
-  });
-  var $blocking_container = $('<div></div>').html($blocking);
-  $panel.append($blocking_container);
-  $('body').append($panel);
-  $('#map-editor-panel .single-tile').eq(0).addClass('active');
+
 }
-EO.admin.mapEditor.panel.destroy = function() {
-  $('#map-editor-panel').remove();
+EO.admin.mapEditor.updateSelection = function() {
+
+  EO.admin.mapEditor.selection.active = false;
+
+  EO.three.scene.remove(EO.admin.mapEditor.selection.object);
+
 }
+
+
 
 EO.admin.mapEditor.mouse = {};
 EO.admin.mapEditor.mouse.raycaster = new THREE.Raycaster();
@@ -87,6 +97,38 @@ EO.admin.mapEditor.mouse.onMouseMove = function( event ) {
 
   EO.admin.mapEditor.mouse.vector.x = ( ( event.clientX - document.getElementById('gamecanvas').getBoundingClientRect().left ) / EO.settings.width ) * 2 - 1;
   EO.admin.mapEditor.mouse.vector.y = - ( ( event.clientY - document.getElementById('gamecanvas').getBoundingClientRect().top ) / EO.settings.height ) * 2 + 1;
+
+  if ( EO.admin.mapEditor.selection.active ) {
+
+    EO.admin.mapEditor.mouse.raycaster.setFromCamera( EO.admin.mapEditor.mouse.vector, EO.three.camera );
+
+    var intersects = EO.admin.mapEditor.mouse.raycaster.intersectObjects( EO.three.scene.children );
+
+    if ( intersects.length > 0 ) {
+
+      var x = Math.floor(intersects[0].point.x / 64) * 64
+      var y = Math.floor(intersects[0].point.y / 64) * 64;
+
+      var diff_x = x - EO.admin.mapEditor.selection.origin_x
+      var diff_y = y - EO.admin.mapEditor.selection.origin_y;
+
+      var scale_x = diff_x / 64 + 1;
+      var scale_y = diff_y / 64 + 1;
+
+      console.log(scale_x);
+      console.log(scale_y);
+
+      var avg_x = x - diff_x / 2;
+      var avg_y = y - diff_y / 2;
+
+      EO.admin.mapEditor.selection.object.position.set( avg_x, avg_y, 1 );
+      EO.admin.mapEditor.selection.object.scale.set( scale_x, scale_y, 1 );
+
+      EO.three.scene.add( EO.admin.mapEditor.selection.object );
+
+    }
+
+  }
 
 }
 EO.admin.mapEditor.mouse.currentIntersected = null;
@@ -220,6 +262,46 @@ EO.admin.mapEditor.updateSelectedTile = function() {
     }
 
   }
+}
+
+EO.admin.mapEditor.panel = {};
+EO.admin.mapEditor.panel.activeTile = null;
+EO.admin.mapEditor.panel.init = function() {
+  $(document).on('click', '#map-editor-panel .single-tile', function() {
+    $('#map-editor-panel .single-tile').removeClass('active');
+    $(this).addClass('active');
+  });
+}
+EO.admin.mapEditor.panel.create = function() {
+  var $panel = $('<div></div>').attr({
+    "id":"map-editor-panel"
+  });
+  var $tile_container = $('<div></div>').attr({
+    "class":"tile-container"
+  });
+  for (var i = 0; i < EO.tiles.predefined.length; i++) {
+    var tile = EO.tiles.predefined[i];
+    var $img = $('<img />').attr({
+      "src": tile.asset.file_url.split('public/')[1]
+    });
+    var $tile = $('<div></div>').attr({
+      "class":"single-tile",
+      "data-id": tile.id
+    }).html($img);
+    $tile_container.append($tile);
+  }
+  $panel.append($tile_container);
+  var $blocking = $('<input />').attr({
+    "type":"checkbox",
+    "id":"is_blocking"
+  });
+  var $blocking_container = $('<div></div>').html($blocking);
+  $panel.append($blocking_container);
+  $('body').append($panel);
+  $('#map-editor-panel .single-tile').eq(0).addClass('active');
+}
+EO.admin.mapEditor.panel.destroy = function() {
+  $('#map-editor-panel').remove();
 }
 
 

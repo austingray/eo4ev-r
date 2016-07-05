@@ -39,9 +39,38 @@ EO.input.keyboard.init = function() {
     if( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = false;
   });
 }
+EO.input.keyboard.needsSingleUpdate = false;
+EO.input.keyboard.completedSingleUpdate = false;
 EO.input.keyboard.update = function() {
+
   var input_arr = [EO.input.keyboard.up, EO.input.keyboard.right, EO.input.keyboard.down, EO.input.keyboard.left];
-  EO.server.socket.emit('input', input_arr);
+
+  var update = false;
+
+  for (var i = 0; i < input_arr.length; i++) {
+
+    if (input_arr[i]) {
+      update = true;
+    }
+
+  }
+
+  if (update) {
+
+    EO.server.socket.emit('input', input_arr);
+    EO.input.keyboard.needsSingleUpdate = true;
+
+  } else {
+
+    if ( EO.input.keyboard.needsSingleUpdate ) {
+
+      EO.server.socket.emit('input', input_arr);
+      EO.input.keyboard.needsSingleUpdate = false;
+
+    }
+
+  }
+
 }
 
 EO.input.mouse = {};

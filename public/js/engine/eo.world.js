@@ -12,25 +12,19 @@ EO.world.createObject = function(object) {
 }
 EO.world.deleteObject = function(object) {
 
-  console.log('removing this object from scene:');
-  console.log(object);
-
   EO.three.scene.remove(object);
 
-  // if (object.geometry) {
-  //   console.log('cleaning object geometry');
-  //   object.geometry.dispose();
-  // }
-  //
-  // if (object.material) {
-  //   console.log('cleaning object material');
-  //   object.material.dispose();
-  // }
-  //
-  // if (object.texture) {
-  //   console.log('cleaning object texture');
-  //   object.texture.dispose();
-  // }
+  if (object.geometry && typeof(object.geometry.dispose) == "function") {
+    object.geometry.dispose();
+  }
+
+  if (object.material && typeof(object.material.dispose) == "function") {
+    object.material.dispose();
+  }
+
+  if (object.texture && typeof(object.texture.dispose) == "function") {
+    object.texture.dispose();
+  }
 
   if (typeof EO.world.objects.active[object.name] !== 'undefined')
     delete EO.world.objects.active[object.name]
