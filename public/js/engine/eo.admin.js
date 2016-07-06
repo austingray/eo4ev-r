@@ -60,8 +60,6 @@ EO.admin.mapEditor.createSelection = function() {
 
   if ( intersects.length > 0 ) {
 
-
-
     var x = Math.floor(intersects[0].point.x / 64) * 64
     var y = Math.floor(intersects[0].point.y / 64) * 64;
 
@@ -78,6 +76,17 @@ EO.admin.mapEditor.createSelection = function() {
 
 }
 EO.admin.mapEditor.updateSelection = function() {
+
+  var tileObj = {
+    start_x: Math.floor(EO.admin.mapEditor.selection.origin_x / 64),
+    start_y: Math.floor(EO.admin.mapEditor.selection.origin_y / 64),
+    width: EO.admin.mapEditor.selection.object.scale.x,
+    height: EO.admin.mapEditor.selection.object.scale.y,
+    tile_id: Number($('.single-tile.active').attr("data-id")),
+    blocking: false
+  }
+
+  EO.server.socket.emit('map_multi_update', { tiles: tileObj });
 
   EO.admin.mapEditor.selection.active = false;
 
@@ -114,9 +123,6 @@ EO.admin.mapEditor.mouse.onMouseMove = function( event ) {
 
       var scale_x = diff_x / 64 + 1;
       var scale_y = diff_y / 64 + 1;
-
-      console.log(scale_x);
-      console.log(scale_y);
 
       var avg_x = x - diff_x / 2;
       var avg_y = y - diff_y / 2;

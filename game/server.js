@@ -158,6 +158,85 @@ SERVER.db.updateTile = function(user_id, tile, callback) {
   });
 }
 
+
+SERVER.db.multiTilesArr = [];
+SERVER.db.multiTilesFuncArr = [];
+SERVER.db.multiTilesComp = 0;
+SERVER.db.multiTilesFunc = function(i) {
+  return function() {
+
+    var tile = SERVER.db.multiTilesArr[i];
+
+    // var tile_x = Math.floor( Number(tile.x) / 64 );
+    // var tile_y = Math.floor( Number(tile.y) / 64 );
+
+    Maps.query(function(qb) {
+      qb.where('x', '=', tile.x)
+        .andWhere('y', '=', tile.y)
+    }).fetch().then(function(model) {
+      if (model == null) {
+        new Maps({ x: SERVER.db.multiTilesArr[i].x, y: SERVER.db.multiTilesArr[i].y, height: 0, blocking: false, tile_id: Number(tile.tile_id) }).save().then(function(map_tile) {
+          // callback();
+          SERVER.db.multiTilesComp++;
+          if (SERVER.db.multiTilesComp === SERVER.db.multiTilesFuncArr.length) {
+            SERVER.db.multiTilesCallback();
+          }
+        });
+      } else {
+        var map = model.toJSON();
+        var map_id = map.id;
+        new Maps({ id: map_id }).save({
+          tile_id: Number( tile.tile_id )
+        }, {patch: true}).then(function(model) {
+          // callback();
+          SERVER.db.multiTilesComp++;
+          if (SERVER.db.multiTilesComp === SERVER.db.multiTilesFuncArr.length) {
+            SERVER.db.multiTilesCallback();
+          }
+        });
+      }
+    });
+
+  }
+}
+SERVER.db.updateMultiTile = function(user_id, tiles, callback) {
+  SERVER.db.fetchUserAccess(user_id, function(user_access) {
+
+    if (user_access > 2) {
+
+      SERVER.db.multiTilesArr = [];
+      SERVER.db.multiTilesFuncArr = [];
+      SERVER.db.multiTilesComp = 0;
+      SERVER.db.multiTilesCallback = callback;
+
+      for (var i = tiles.start_x; i < tiles.start_x + tiles.width; i++) {
+        for (var j = tiles.start_y; j < tiles.start_y + tiles.height; j++) {
+
+          var tile = {
+            x: i,
+            y: j,
+            tile_id:  tiles.tile_id,
+            blocking: false,
+          }
+
+          SERVER.db.multiTilesArr.push(tile);
+
+        }
+      }
+
+      for (var k = 0; k < SERVER.db.multiTilesArr.length; k++) {
+        SERVER.db.multiTilesFuncArr[k] = SERVER.db.multiTilesFunc(k);
+      }
+
+      for (var l = 0; l < SERVER.db.multiTilesArr.length; l++) {
+        SERVER.db.multiTilesFuncArr[l]();
+      }
+
+    }
+
+  });
+}
+
 ////////////////////////////////////////
 // Contains all connected player data //
 ////////////////////////////////////////
@@ -249,7 +328,7 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
     var top_edge = Math.abs(Number(c.height) + c.y - p.y / 64);
     var bottom_edge = Math.abs(p.y / 64 - c.y);
 
-    if (left_edge < 1 || right_edge < 1 || top_edge < 1 || bottom_edge < 1) {
+    if (left_edge < 10 || right_edge < 10 || top_edge < 15 || bottom_edge < 15) {
       var updateChunk = true;
     }
   }
@@ -358,6 +437,25 @@ SERVER.socket = function(data) {
             });
           });
         });
+
+        //map multi update
+
+        socket.on('map_multi_update', function(data) {
+          SERVER.db.updateMultiTile(socket.request.user.id, data.tiles, function() {
+            SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+              SERVER.players.data[socket.id].lastChunk = chunkRect;
+
+              var chunkObj = {
+                data: chunkData,
+                offset: SERVER.players.data[socket.id].view.pos,
+                clear: true
+              };
+
+              socket.emit('chunk', { chunk: chunkObj });
+            });
+          });
+        });
+
         //
         //player logged in message
         io.emit('news', { message: socket.request.user.username + ' has joined the fray!' } );
