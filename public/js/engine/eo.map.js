@@ -20,7 +20,7 @@ EO.map.update = function() {
 
 }
 
-EO.map.HandleChunk_new = function(chunk) {
+EO.map.HandleChunk_deletethisfunction = function(chunk) {
 
   if (Object.keys(EO.tiles.library).length === 0 && EO.tiles.library.constructor === Object) {
     return setTimeout(function() {
@@ -44,7 +44,7 @@ EO.map.HandleChunk_new = function(chunk) {
   EO.three.scene.add(mesh);
 
 }
-
+EO.map.chunkHooks = [];
 EO.map.HandleChunk = function(chunkObj) {
 
   if (Object.keys(EO.tiles.library).length === 0 && EO.tiles.library.constructor === Object) {
@@ -100,11 +100,15 @@ EO.map.HandleChunk = function(chunkObj) {
 
   chunkGeometry.sortFacesByMaterialIndex();
   //var bufferGeo = new THREE.BufferGeometry().fromGeometry(chunkGeometry);
-  var chunk = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( materialListDictionary ) );
-  chunk.name = "Chunk"
+  var chunkMesh = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( materialListDictionary ) );
+  chunkMesh.name = "Chunk"
   //chunk.position.set(offset.x, offset.y, 0);
 
-  EO.three.scene.add(chunk);
+  EO.three.scene.add(chunkMesh);
+
+  for (var l = 0; l < EO.map.chunkHooks.length; l++) {
+    EO.map.chunkHooks[l](chunk);
+  }
 
 }
 EO.map.DrawTileFromChunkItem = function (chunk_item) {

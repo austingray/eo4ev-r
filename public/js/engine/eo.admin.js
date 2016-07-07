@@ -21,6 +21,7 @@ EO.admin.mapEditor.init = function() {
 EO.admin.mapEditor.active = false;
 EO.admin.mapEditor.activate = function() {
   EO.admin.mapEditor.active = true;
+  EO.map.chunkHooks.push(EO.admin.mapEditor.chunkHook);
   //EO.input.mouse.modules.push(EO.admin.mapEditor.mouse.update);
   document.getElementById('gamecanvas').addEventListener( 'mousemove', EO.admin.mapEditor.mouse.onMouseMove, false );
   //document.getElementById('gamecanvas').addEventListener( 'click', EO.admin.mapEditor.updateSelectedTile, false );
@@ -33,6 +34,10 @@ EO.admin.mapEditor.deactivate = function() {
   var index = EO.input.mouse.modules.indexOf(EO.admin.mapEditor.mouse.update);
   if (index > -1) {
     EO.input.mouse.modules.splice(index, 1);
+  }
+  var cHookIndex = EO.map.chunkHooks.indexOf(EO.admin.mapEditor.chunkHook);
+  if (index > -1) {
+    EO.map.chunkHooks.splice(cHookIndex, 1);
   }
   document.getElementById('gamecanvas').removeEventListener( 'mousemove', EO.admin.mapEditor.mouse.onMouseMove );
   //document.getElementById('gamecanvas').removeEventListener( 'click', EO.admin.mapEditor.updateSelectedTile );
@@ -68,8 +73,6 @@ EO.admin.mapEditor.createSelection = function() {
 
     EO.admin.mapEditor.selection.object.position.set(x, y, 0);
 
-    console.log(EO.admin.mapEditor.selection.object);
-
     EO.three.scene.add( EO.admin.mapEditor.selection.object );
 
   }
@@ -77,13 +80,15 @@ EO.admin.mapEditor.createSelection = function() {
 }
 EO.admin.mapEditor.updateSelection = function() {
 
+  var blocking = document.getElementById('is_blocking').checked
+
   var tileObj = {
     start_x: Math.floor(EO.admin.mapEditor.selection.origin_x / 64),
     start_y: Math.floor(EO.admin.mapEditor.selection.origin_y / 64),
     width: EO.admin.mapEditor.selection.object.scale.x,
     height: EO.admin.mapEditor.selection.object.scale.y,
     tile_id: Number($('.single-tile.active').attr("data-id")),
-    blocking: false
+    blocking: blocking
   }
 
   EO.server.socket.emit('map_multi_update', { tiles: tileObj });
@@ -94,6 +99,40 @@ EO.admin.mapEditor.updateSelection = function() {
 
 }
 
+EO.admin.mapEditor.chunkHook = function(chunk) {
+  EO.admin.mapEditor.showBlocking(chunk);
+}
+
+EO.admin.mapEditor.showBlocking = function(chunk) {
+
+  var chunkGeometry = new THREE.Geometry();
+
+  var geometry = new THREE.PlaneGeometry( 64, 64 );
+  var material = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0.5});
+  var mesh = new THREE.Mesh( geometry, material );
+
+  for (var i = 0; i < chunk.length; i++) {
+
+    if (chunk[i].blocking) {
+
+      mesh.position.set( chunk[i].x * 64, chunk[i].y * 64, 0.5 );
+      mesh.updateMatrix();
+
+      chunkGeometry.merge(mesh.geometry, mesh.matrix, 0);
+
+    }
+
+  }
+
+  chunkGeometry.sortFacesByMaterialIndex();
+  //var bufferGeo = new THREE.BufferGeometry().fromGeometry(chunkGeometry);
+  var chunkMesh = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial([ material ]) );
+  chunkMesh.name = "Chunk"
+  //chunk.position.set(offset.x, offset.y, 0);
+
+  EO.three.scene.add(chunkMesh);
+
+}
 
 
 EO.admin.mapEditor.mouse = {};
@@ -302,6 +341,10 @@ EO.admin.mapEditor.panel.create = function() {
     "id":"is_blocking"
   });
   var $blocking_container = $('<div></div>').html($blocking);
+  var $label = $('<label></label>').attr({
+    "for":"is_blocking"
+  }).html('is blocking');
+  $blocking_container.append($label);
   $panel.append($blocking_container);
   $('body').append($panel);
   $('#map-editor-panel .single-tile').eq(0).addClass('active');

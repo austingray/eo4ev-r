@@ -18,6 +18,14 @@ var Assets = require('../db/assets.js');
 
 var SERVER = {};
 
+SERVER.util = {};
+SERVER.util.floorX = function(x) {
+  return Math.floor((x + 32) / 64);
+}
+SERVER.util.floorY = function(y) {
+  return Math.floor((y + 32) / 64);
+}
+
 //////////////////////
 // database methods //
 //////////////////////
@@ -48,6 +56,7 @@ SERVER.db.fetchUser = function(socket, callback) {
     user.view.pos = user_data.position;
     user.view.rot = 0;
     user.view.walking = false;
+    user.speed = 1;
 
     callback(user);
 
@@ -175,7 +184,7 @@ SERVER.db.multiTilesFunc = function(i) {
         .andWhere('y', '=', tile.y)
     }).fetch().then(function(model) {
       if (model == null) {
-        new Maps({ x: SERVER.db.multiTilesArr[i].x, y: SERVER.db.multiTilesArr[i].y, height: 0, blocking: false, tile_id: Number(tile.tile_id) }).save().then(function(map_tile) {
+        new Maps({ x: SERVER.db.multiTilesArr[i].x, y: SERVER.db.multiTilesArr[i].y, height: 0, blocking: SERVER.db.multiTilesArr[i].blocking, tile_id: Number(tile.tile_id) }).save().then(function(map_tile) {
           // callback();
           SERVER.db.multiTilesComp++;
           if (SERVER.db.multiTilesComp === SERVER.db.multiTilesFuncArr.length) {
@@ -186,7 +195,8 @@ SERVER.db.multiTilesFunc = function(i) {
         var map = model.toJSON();
         var map_id = map.id;
         new Maps({ id: map_id }).save({
-          tile_id: Number( tile.tile_id )
+          tile_id: Number( tile.tile_id ),
+          blocking: tile.blocking
         }, {patch: true}).then(function(model) {
           // callback();
           SERVER.db.multiTilesComp++;
@@ -216,7 +226,7 @@ SERVER.db.updateMultiTile = function(user_id, tiles, callback) {
             x: i,
             y: j,
             tile_id:  tiles.tile_id,
-            blocking: false,
+            blocking: tiles.blocking,
           }
 
           SERVER.db.multiTilesArr.push(tile);
@@ -281,7 +291,7 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
 
   var walking = false;
   var cRot;
-  var speedMulti = 20;
+  var speedMulti = SERVER.players.data[socket_id].speed;
   var mSpeed = 1.55 * speedMulti;
   var mSpeedDiag = 1 * speedMulti;
   var cUp = inputs[0]; var cRight = inputs[1]; var cDown = inputs[2]; var cLeft = inputs[3];
@@ -320,6 +330,21 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
 
   var updateChunk = false;
   if (walking) {
+    //var c_x = Math.floor(p.x / 64);
+    var c_x = SERVER.util.floorX(p.x);
+    //var c_y = Math.floor(p.y / 64);
+    var c_y = SERVER.util.floorY(p.y);
+    //console.log(c_y);
+    for (var z = 0; z < SERVER.players.data[socket_id].chunkData.length; z++) {
+      if (SERVER.players.data[socket_id].chunkData[z].x === c_x && SERVER.players.data[socket_id].chunkData[z].y === c_y) {
+        var check_this = SERVER.players.data[socket_id].chunkData[z];
+        break;
+      }
+    }
+    if (typeof check_this !== 'undefined' && check_this.blocking) {
+      p.x = old_pos.x;
+      p.y = old_pos.y;
+    }
     //check for chunks
     var c = SERVER.players.data[socket_id].lastChunk;
 
@@ -408,9 +433,6 @@ SERVER.socket = function(data) {
       //send join notice plus first chunk
       SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
 
-        //stash the coords of the last chunkRect to check against when to load the next one
-        SERVER.players.data[socket.id].lastChunk = chunkRect;
-
         var chunkObj = {
           data: chunkData,
           offset: SERVER.players.data[socket.id].view.pos
@@ -423,8 +445,6 @@ SERVER.socket = function(data) {
         socket.on('map_update', function(data) {
           SERVER.db.updateTile(socket.request.user.id, data.tile, function() {
             SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
-
-              SERVER.players.data[socket.id].lastChunk = chunkRect;
 
               var chunkObj = {
                 data: chunkData,
@@ -443,7 +463,6 @@ SERVER.socket = function(data) {
         socket.on('map_multi_update', function(data) {
           SERVER.db.updateMultiTile(socket.request.user.id, data.tiles, function() {
             SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
-              SERVER.players.data[socket.id].lastChunk = chunkRect;
 
               var chunkObj = {
                 data: chunkData,
@@ -566,6 +585,7 @@ SERVER.chatCommands.parse = function(socket, cmd, callback) {
   }
 
   var command = SERVER.chatCommands.dictionary[cmd];
+  command.args = args;
 
   //access check
   if (command.access) {
@@ -627,6 +647,28 @@ SERVER.chatCommands.dictionary = {
 
   map: {
     access: 2,
+    action: function(socket, args, callback) {
+      var pThis = this;
+      return SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+
+        var chunkObj = {
+          data: chunkData,
+          offset: SERVER.players.data[socket.id].view.pos,
+          clear: true
+        };
+
+        pThis.response = {
+          rType: 'chunk',
+          rKey: 'chunk',
+          rVal: chunkObj
+        }
+
+        callback();
+
+        socket.emit('mapeditor', { message: 'start er up custom!' });
+
+      });
+    },
     response: {
       rType: 'mapeditor',
       rKey: 'message',
@@ -644,6 +686,24 @@ SERVER.chatCommands.dictionary = {
       rType: 'notice',
       rKey: 'message',
       rVal: 'Logged your pos in the console'
+    }
+  },
+
+  speed: {
+    action: function(socket, args, callback) {
+      if (typeof args[0] === 'undefined') {
+        this.response.rVal = 'Set a speed, asshole!';
+      } else {
+        SERVER.players.data[socket.id].speed = Number(args[0])
+        console.log(Number(args[0]));
+        this.response.rVal = 'Your speed multiplier has been updated to ' + Number(args[0]);
+      }
+      callback();
+    },
+    response: {
+      rType: 'notice',
+      rKey: 'message',
+      rVal: 'your speed has been updated'
     }
   }
 
@@ -704,6 +764,9 @@ SERVER.map.GetChunk = function(socket, callback) {
   var chunkRect = SERVER.map.ChunkRectFromCenterTileCoords(coords);
 
   var chunkData = SERVER.db.FetchMapChunk(chunkRect, function(chunkData) {
+
+    SERVER.players.data[socket.id].lastChunk = chunkRect;
+    SERVER.players.data[socket.id].chunkData = chunkData;
 
     callback(chunkRect, chunkData);
 
