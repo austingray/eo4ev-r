@@ -111,25 +111,28 @@ exports.seed = function(knex, Promise) {
 
 
     //asset categories
-    knex('asset_categories').del(),
+    // knex('asset_categories').del(),
+    // knex('asset_categories').insert({
+    //     name: 'Uncategorized'
+    // }),
+    // knex('asset_categories').insert({
+    //   name: 'Tiles'
+    // }),
+    // knex('asset_categories').insert({
+    //   name: 'Characters'
+    // }),
     knex('asset_categories').insert({
-        name: 'Uncategorized'
-    }),
-    knex('asset_categories').insert({
-      name: 'Tiles'
-    }),
-    knex('asset_categories').insert({
-      name: 'Characters'
-    }),
+      name: 'Structures'
+    })
 
     //asset types
-    knex('asset_types').del(),
-    knex('asset_types').insert({
-        name: 'Model'
-    }),
-    knex('asset_types').insert({
-        name: 'Texture'
-    })
+    // knex('asset_types').del(),
+    // knex('asset_types').insert({
+    //     name: 'Model'
+    // }),
+    // knex('asset_types').insert({
+    //     name: 'Texture'
+    // })
 
   );
 };

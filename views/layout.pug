@@ -21,6 +21,7 @@ html
               var msg = $(this).val();
               $(this).val('');
               EO.server.socket.emit('chat', { message: msg });
+              $('#gamecanvas').focus();
             }
           });
         });

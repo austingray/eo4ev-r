@@ -26,6 +26,13 @@ EO.preload = function(chunk) {
       return EO.preload(chunk);
     }, 33);
   }
+  if (typeof EO.structures.predefined == 'undefined') {
+    console.log('init structures');
+    EO.structures.init();
+    setTimeout(function() {
+      return EO.preload(chunk);
+    }, 33);
+  }
 
   if (EO.preloaded) return false;
 
@@ -36,6 +43,7 @@ EO.preload = function(chunk) {
     EO.models.init,
     //EO.character.init(),
     EO.tiles.init,
+    EO.structures.init,
     //EO.map.init(),
     EO.input.init,
     EO.render,

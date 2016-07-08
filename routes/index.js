@@ -114,6 +114,15 @@ router.get('/assets/tiles/all', function(req, res, next) {
   // });
 });
 
+router.get('/assets/structures/all', function(req, res, next) {
+  Assets.query(function(qb) {
+    qb.where('asset_type_id', '=', 2)
+      .andWhere('asset_category_id', '=', 4)
+  }).fetchAll().then(function(assets) {
+    res.json(assets.toJSON());
+  });
+})
+
 //////////////////////////////////////////////////////////////////////////////////////
 //helper function to convert username to lowercase and check if it is already taken //
 //////////////////////////////////////////////////////////////////////////////////////

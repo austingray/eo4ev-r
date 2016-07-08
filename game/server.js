@@ -136,8 +136,6 @@ SERVER.db.updateTile = function(user_id, tile, callback) {
       // new Characters({id: req.user.current_character}).fetch().then(function(model) {
         // var char = model.toJSON();
         // var char_pos = char.position;
-        // console.log('req: ' + req.body.x + ', char: ' + char_pos.x);
-        // console.log('req: ' + req.body.y + ', char: ' + char_pos.y);
         // var tile_x = Math.floor( ( Number(char_pos.x) + Number(sanitize(req.body.x)) ) / 64 );
         // var tile_y = Math.floor( ( Number(char_pos.y) + Number(sanitize(req.body.y)) ) / 64 );
         var tile_x = Math.floor( Number(tile.x) / 64 );
@@ -334,7 +332,6 @@ SERVER.players.updatePlayer = function(socket_id, inputs) {
     var c_x = SERVER.util.floorX(p.x);
     //var c_y = Math.floor(p.y / 64);
     var c_y = SERVER.util.floorY(p.y);
-    //console.log(c_y);
     for (var z = 0; z < SERVER.players.data[socket_id].chunkData.length; z++) {
       if (SERVER.players.data[socket_id].chunkData[z].x === c_x && SERVER.players.data[socket_id].chunkData[z].y === c_y) {
         var check_this = SERVER.players.data[socket_id].chunkData[z];
@@ -493,7 +490,6 @@ SERVER.socket = function(data) {
 
               if (typeof response == 'undefined' || typeof response.rType === 'undefined' || typeof response.rKey === 'undefined' || typeof response.rVal === 'undefined') {
                 console.log('chat command handler returned empty response or empty rType or empty rKey or empty rValue:');
-                console.log(response);
                 return false;
               }
 
@@ -507,7 +503,6 @@ SERVER.socket = function(data) {
               if (response.rTarget === "global") {
                 io.emit( type, { key, val } );
               } else {
-                console.log(type+', '+key+', '+val);
                 socket.emit( type, responseObject );
               }
 
@@ -647,28 +642,28 @@ SERVER.chatCommands.dictionary = {
 
   map: {
     access: 2,
-    action: function(socket, args, callback) {
-      var pThis = this;
-      return SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
-
-        var chunkObj = {
-          data: chunkData,
-          offset: SERVER.players.data[socket.id].view.pos,
-          clear: true
-        };
-
-        pThis.response = {
-          rType: 'chunk',
-          rKey: 'chunk',
-          rVal: chunkObj
-        }
-
-        callback();
-
-        socket.emit('mapeditor', { message: 'start er up custom!' });
-
-      });
-    },
+    // action: function(socket, args, callback) {
+    //   var pThis = this;
+    //   return SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+    //
+    //     var chunkObj = {
+    //       data: chunkData,
+    //       offset: SERVER.players.data[socket.id].view.pos,
+    //       clear: true
+    //     };
+    //
+    //     // pThis.response = {
+    //     //   rType: 'chunk',
+    //     //   rKey: 'chunk',
+    //     //   rVal: chunkObj
+    //     // }
+    //
+    //     callback();
+    //
+    //     socket.emit('mapeditor', { message: 'start er up custom!' });
+    //
+    //   });
+    // },
     response: {
       rType: 'mapeditor',
       rKey: 'message',
@@ -685,7 +680,7 @@ SERVER.chatCommands.dictionary = {
     response: {
       rType: 'notice',
       rKey: 'message',
-      rVal: 'Logged your pos in the console'
+      rVal: 'Logged your position in the console'
     }
   },
 
@@ -695,7 +690,6 @@ SERVER.chatCommands.dictionary = {
         this.response.rVal = 'Set a speed, asshole!';
       } else {
         SERVER.players.data[socket.id].speed = Number(args[0])
-        console.log(Number(args[0]));
         this.response.rVal = 'Your speed multiplier has been updated to ' + Number(args[0]);
       }
       callback();
@@ -704,6 +698,15 @@ SERVER.chatCommands.dictionary = {
       rType: 'notice',
       rKey: 'message',
       rVal: 'your speed has been updated'
+    }
+  },
+
+  structure: {
+    access: 2,
+    response: {
+      rType: 'structeditor',
+      rKey: 'message',
+      rVal: 'Starting dat structure editor'
     }
   }
 

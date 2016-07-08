@@ -9,6 +9,13 @@ EO.admin.sockets.init = function() {
       EO.admin.mapEditor.activate();
     }
   });
+  EO.server.socket.on('structeditor', function(response) {
+    if (EO.admin.structEditor.active) {
+      EO.admin.structEditor.deactivate();
+    } else {
+      EO.admin.structEditor.activate();
+    }
+  });
 }
 
 ///////////////
@@ -31,19 +38,24 @@ EO.admin.mapEditor.activate = function() {
 }
 EO.admin.mapEditor.deactivate = function() {
   EO.admin.mapEditor.active = false;
-  var index = EO.input.mouse.modules.indexOf(EO.admin.mapEditor.mouse.update);
-  if (index > -1) {
-    EO.input.mouse.modules.splice(index, 1);
-  }
-  var cHookIndex = EO.map.chunkHooks.indexOf(EO.admin.mapEditor.chunkHook);
-  if (index > -1) {
-    EO.map.chunkHooks.splice(cHookIndex, 1);
-  }
+  // var index = EO.input.mouse.modules.indexOf(EO.admin.mapEditor.mouse.update);
+  // if (index > -1) {
+  //   console.log('getting rid of da mouse doe');
+  //   EO.input.mouse.modules.splice(index, 1);
+  // }
+  EO.map.chunkHooks = [];
+  // var cHookIndex = EO.map.chunkHooks.indexOf(EO.admin.mapEditor.chunkHook);
+  // if (index > -1) {
+  //   console.log('unhooking chunkhook');
+  //   EO.map.chunkHooks.splice(cHookIndex, 1);
+  // }
+  EO.three.scene.remove(EO.admin.mapEditor.blocking.object);
   document.getElementById('gamecanvas').removeEventListener( 'mousemove', EO.admin.mapEditor.mouse.onMouseMove );
   //document.getElementById('gamecanvas').removeEventListener( 'click', EO.admin.mapEditor.updateSelectedTile );
   document.getElementById('gamecanvas').removeEventListener( 'mousedown', EO.admin.mapEditor.createSelection, false );
   document.getElementById('gamecanvas').removeEventListener( 'mouseup', EO.admin.mapEditor.updateSelection, false );
   EO.admin.mapEditor.panel.destroy();
+
 }
 
 EO.admin.mapEditor.selection = {};
@@ -100,9 +112,12 @@ EO.admin.mapEditor.updateSelection = function() {
 }
 
 EO.admin.mapEditor.chunkHook = function(chunk) {
+  EO.three.scene.remove(EO.admin.mapEditor.blocking.object);
   EO.admin.mapEditor.showBlocking(chunk);
 }
 
+EO.admin.mapEditor.blocking = {};
+EO.admin.mapEditor.blocking.object;
 EO.admin.mapEditor.showBlocking = function(chunk) {
 
   var chunkGeometry = new THREE.Geometry();
@@ -127,8 +142,10 @@ EO.admin.mapEditor.showBlocking = function(chunk) {
   chunkGeometry.sortFacesByMaterialIndex();
   //var bufferGeo = new THREE.BufferGeometry().fromGeometry(chunkGeometry);
   var chunkMesh = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial([ material ]) );
-  chunkMesh.name = "Chunk"
+  chunkMesh.name = "Blocking"
   //chunk.position.set(offset.x, offset.y, 0);
+  //
+  EO.admin.mapEditor.blocking.object = chunkMesh;
 
   EO.three.scene.add(chunkMesh);
 
@@ -315,11 +332,13 @@ EO.admin.mapEditor.panel.init = function() {
   $(document).on('click', '#map-editor-panel .single-tile', function() {
     $('#map-editor-panel .single-tile').removeClass('active');
     $(this).addClass('active');
+    $('#gamecanvas').focus();
   });
 }
 EO.admin.mapEditor.panel.create = function() {
   var $panel = $('<div></div>').attr({
-    "id":"map-editor-panel"
+    "id":"map-editor-panel",
+    "class":"editor-panel"
   });
   var $tile_container = $('<div></div>').attr({
     "class":"tile-container"
@@ -353,6 +372,139 @@ EO.admin.mapEditor.panel.destroy = function() {
   $('#map-editor-panel').remove();
 }
 
+//////////////////
+//struct editor //
+//////////////////
+EO.admin.structEditor = {};
+EO.admin.structEditor.init = function() {
+  EO.admin.structEditor.panel.init();
+}
+EO.admin.structEditor.panel = {};
+EO.admin.structEditor.panel.init = function() {
+  $(document).on('click', '#struct-editor-panel .single-tile', function() {
+    $('#map-editor-panel .single-tile').removeClass('active');
+    $(this).addClass('active');
+    $('#gamecanvas').focus();
+  });
+}
+EO.admin.structEditor.panel.create = function() {
+  var $panel = $('<div></div>').attr({
+    "id":"struct-editor-panel",
+    "class":"editor-panel"
+  });
+  var $tile_container = $('<div></div>').attr({
+    "class":"tile-container"
+  });
+  for (var i = 0; i < EO.structures.predefined.length; i++) {
+    var tile = EO.structures.predefined[i];
+    var $img = $('<img />').attr({
+      "src": tile.file_url.split('public/')[1]
+    });
+    var $tile = $('<div></div>').attr({
+      "class":"single-tile",
+      "data-id": tile.id
+    }).html($img);
+    $tile_container.append($tile);
+  }
+  $panel.append($tile_container);
+  var $height = $('<input />').attr({
+    "type":"number",
+    "id":"struct_height",
+    "value":"1"
+  });
+  var $height_container = $('<div></div>').html($height);
+  var $label = $('<label></label>').attr({
+    "for":"struct_height"
+  }).html('structure height');
+  $height_container.append($label);
+  $panel.append($height_container);
+  var $structdelete = $('<input />').attr({
+    "type":"checkbox",
+    "id":"struct_delete"
+  });
+  var $structcontainer = $('<div></div>').html($structdelete);
+  var $structlabel = $('<label></label>').attr({
+    "for":"struct_delete"
+  }).html('delete');
+  $structcontainer.append($structlabel);
+  $panel.append($structcontainer);
+  $('body').append($panel);
+  $('#struct-editor-panel .single-tile').eq(0).addClass('active');
+}
+EO.admin.structEditor.panel.destroy = function() {
+  $('#struct-editor-panel').remove();
+}
+EO.admin.structEditor.activate = function() {
+  EO.admin.structEditor.active = true;
+  EO.map.chunkHooks.push(EO.admin.structEditor.chunkHook);
+  document.getElementById('gamecanvas').addEventListener( 'mousemove', EO.admin.structEditor.mouse.onMouseMove, false );
+  document.getElementById('gamecanvas').addEventListener( 'click', EO.admin.structEditor.updateSelectedTile, false );
+  EO.admin.structEditor.panel.create();
+
+  var active_texture_id = $('.single-tile.active').attr("data-id");
+  var geometry = new THREE.BoxGeometry( 64, 64, 64 );
+  var material = EO.structures.library[active_texture_id].clone();
+  material.transparent = true;
+  material.opacity = 0.7;
+  EO.admin.structEditor.object = new THREE.Mesh( geometry, material );
+  EO.three.scene.add(EO.admin.structEditor.object);
+}
+EO.admin.structEditor.deactivate = function() {
+  EO.admin.structEditor.active = false;
+  EO.map.chunkHooks = [];
+  document.getElementById('gamecanvas').removeEventListener( 'mousemove', EO.admin.structEditor.mouse.onMouseMove );
+  document.getElementById('gamecanvas').removeEventListener( 'click', EO.admin.structEditor.updateSelectedTile );
+  EO.admin.structEditor.panel.destroy();
+}
+EO.admin.structEditor.mouse = {};
+EO.admin.structEditor.mouse.raycaster = new THREE.Raycaster();
+EO.admin.structEditor.mouse.vector = new THREE.Vector2();
+EO.admin.structEditor.mouse.onMouseMove = function( event ) {
+  EO.admin.structEditor.mouse.vector.x = ( ( event.clientX - document.getElementById('gamecanvas').getBoundingClientRect().left ) / EO.settings.width ) * 2 - 1;
+  EO.admin.structEditor.mouse.vector.y = - ( ( event.clientY - document.getElementById('gamecanvas').getBoundingClientRect().top ) / EO.settings.height ) * 2 + 1;
+
+  EO.admin.structEditor.mouse.raycaster.setFromCamera( EO.admin.structEditor.mouse.vector, EO.three.camera );
+
+  var intersects = EO.admin.structEditor.mouse.raycaster.intersectObjects( EO.three.scene.children );
+
+  if ( intersects.length > 0 ) {
+
+    var x = Math.floor(intersects[0].point.x / 64) * 64
+    var y = Math.floor(intersects[0].point.y / 64) * 64;
+
+    EO.admin.structEditor.object.position.set( x, y, 1 );
+
+  }
+
+}
+EO.admin.structEditor.updateSelectedTile = function() {
+  if (EO.admin.structEditor.active === true) {
+
+    // update the picking ray with the camera and mouse position
+    EO.admin.structEditor.mouse.raycaster.setFromCamera( EO.admin.structEditor.mouse.vector, EO.three.camera );
+    // calculate objects intersecting the picking ray
+    var intersects = EO.admin.structEditor.mouse.raycaster.intersectObjects( EO.three.scene.children );
+
+    if ( intersects.length > 0 ) {
+
+      var x = intersects[0].point.x
+      var y = intersects[0].point.y;
+      var height = $('#struct_height').val();
+      var texture_id = $('.single-tile.active').attr("data-id");
+      var tile = {
+        x: x,
+        y: y,
+        height: height,
+        texture_id: texture_id
+      }
+
+      EO.server.socket.emit('stucture_update', { tile: tile });
+
+    }
+
+  }
+}
+
 
 EO.admin.init = function() {
   if (typeof THREE === 'undefined') {
@@ -360,6 +512,7 @@ EO.admin.init = function() {
   } else {
     console.log('admin init\'d');
     EO.admin.mapEditor.init();
+    EO.admin.structEditor.init();
     EO.admin.sockets.init();
   }
 };
