@@ -66,6 +66,7 @@ EO.map.HandleChunk = function(chunkObj) {
   //var material_texture = EO.tiles.library[chunk[i].tile_id].clone(true);
   var material_texture = new THREE.MeshPhongMaterial();
   var mesh = new THREE.Mesh( geometry, material );
+  mesh.receiveShadow = true;
 
   for (var i = 0; i < chunk.length; i++) {
 
@@ -101,6 +102,7 @@ EO.map.HandleChunk = function(chunkObj) {
   chunkGeometry.sortFacesByMaterialIndex();
   //var bufferGeo = new THREE.BufferGeometry().fromGeometry(chunkGeometry);
   var chunkMesh = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( materialListDictionary ) );
+  chunkMesh.receiveShadow = true;
   chunkMesh.name = "Chunk"
   //chunk.position.set(offset.x, offset.y, 0);
 

@@ -58,7 +58,9 @@ EO.structures.createfunc = function(i) {
     var asset_url = predefined.file_url.split('public/')[1];
     var tLoader = new THREE.TextureLoader();
     var t = tLoader.load( asset_url );
-    var material = new THREE.MeshPhongMaterial({ map: t });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    var material = new THREE.MeshPhongMaterial({ map: t, shininess: 0, shading: THREE.FlatShading });
+    material.receiveShadow = true;
     EO.structures.library[predefined.id] = material;
   }
 }

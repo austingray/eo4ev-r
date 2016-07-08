@@ -7,6 +7,8 @@ EO.world = {};
 EO.world.objects = {};
 EO.world.objects.active = {};
 EO.world.createObject = function(object) {
+  object.castShadow = true;
+  object.receiveShadow = true;
   this.objects.active[object.mesh.name] = object;
   EO.three.scene.add( this.objects.active[object.mesh.name].mesh );
 }

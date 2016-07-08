@@ -386,6 +386,12 @@ EO.admin.structEditor.panel.init = function() {
     $(this).addClass('active');
     $('#gamecanvas').focus();
   });
+  $(document).on('keyup', '#struct_height', function() {
+    var height = Number($(this).val());
+    EO.admin.structEditor.object.scale.z = height;
+    console.log(EO.admin.structEditor.object);
+    EO.admin.structEditor.object.material.map.repeat.set(1, height);
+  });
 }
 EO.admin.structEditor.panel.create = function() {
   var $panel = $('<div></div>').attr({
@@ -442,11 +448,17 @@ EO.admin.structEditor.activate = function() {
   EO.admin.structEditor.panel.create();
 
   var active_texture_id = $('.single-tile.active').attr("data-id");
-  var geometry = new THREE.BoxGeometry( 64, 64, 64 );
+  var height = Number($('#struct_height').val());
+  var base = 64;
+  var geometry = new THREE.BoxGeometry( base, base, base * height);
   var material = EO.structures.library[active_texture_id].clone();
+  console.log(material);
+  material.map.repeat.set( 1, height );
   material.transparent = true;
-  material.opacity = 0.7;
+  material.opacity = 1;
   EO.admin.structEditor.object = new THREE.Mesh( geometry, material );
+  EO.admin.structEditor.object.castShadow = true;
+  EO.admin.structEditor.object.receiveShadow = true;
   EO.three.scene.add(EO.admin.structEditor.object);
 }
 EO.admin.structEditor.deactivate = function() {
