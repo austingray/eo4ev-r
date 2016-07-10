@@ -15,6 +15,7 @@ var Users = require('../db/users.js');
 var Characters = require('../db/characters.js');
 var Maps = require('../db/maps.js');
 var Assets = require('../db/assets.js');
+var Structures = require('../db/structures.js');
 
 var SERVER = {};
 
@@ -126,6 +127,54 @@ SERVER.db.FetchMapChunk = function(chunkRect, callback) {
     }
   });
 
+}
+
+SERVER.db.FetchStructures = function(chunkRect, callback) {
+  new Structures().inRectangle({ x: chunkRect.x, y: chunkRect.y, width: chunkRect.width, height: chunkRect.height }).fetchAll().then(function(model) {
+    var structures = model.toJSON();
+    callback(structures);
+  })
+}
+
+SERVER.db.updateStructure = function(user_id, structure, callback) {
+  SERVER.db.fetchUserAccess(user_id, function(user_access) {
+
+    if (user_access > 2) {
+
+      var tile_x = Math.floor( Number(structure.x) / 64 );
+      var tile_y = Math.floor( Number(structure.y) / 64 );
+      var height = Number( structure.height );
+      var texture_id = Number( structure.texture_id )
+      Structures.query(function(qb) {
+        qb.where('x', '=', tile_x).andWhere('y', '=', tile_y)
+      }).fetch().then(function(model) {
+        if (model == null) {
+          new Structures({ x: tile_x, y: tile_y, height: Number(structure.height), texture_id: texture_id }).save().then(function(model) {
+            callback();
+          });
+        } else {
+
+          var structObj = model.toJSON();
+
+          if (structure.delete) {
+            new Structures({ id: structObj.id }).destroy().then(function(model) {
+              callback();
+            });
+          } else {
+            new Structures({ id: structObj.id }).save({
+                texture_id: Number( structure.texture_id ),
+                height: Number( structure.height )
+              }, {patch: true}).then(function(model) {
+                callback();
+              });
+            }
+          }
+        })
+      // });
+
+    }
+
+  });
 }
 
 SERVER.db.updateTile = function(user_id, tile, callback) {
@@ -428,10 +477,13 @@ SERVER.socket = function(data) {
     SERVER.players.create(socket, function() {
 
       //send join notice plus first chunk
-      SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+      SERVER.map.GetChunk(socket, function (chunkRect, chunkData, structures) {
 
+        console.log("server structures");
+        console.log(structures);
         var chunkObj = {
           data: chunkData,
+          structures: structures,
           offset: SERVER.players.data[socket.id].view.pos
         };
         //emit 'join' tells client to EO.init();
@@ -441,10 +493,11 @@ SERVER.socket = function(data) {
         //
         socket.on('map_update', function(data) {
           SERVER.db.updateTile(socket.request.user.id, data.tile, function() {
-            SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+            SERVER.map.GetChunk(socket, function (chunkRect, chunkData, structures) {
 
               var chunkObj = {
                 data: chunkData,
+                structures: structures,
                 offset: SERVER.players.data[socket.id].view.pos,
                 clear: true
               };
@@ -459,10 +512,28 @@ SERVER.socket = function(data) {
 
         socket.on('map_multi_update', function(data) {
           SERVER.db.updateMultiTile(socket.request.user.id, data.tiles, function() {
-            SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+            SERVER.map.GetChunk(socket, function (chunkRect, chunkData, structures) {
 
               var chunkObj = {
                 data: chunkData,
+                structures: structures,
+                offset: SERVER.players.data[socket.id].view.pos,
+                clear: true
+              };
+
+              socket.emit('chunk', { chunk: chunkObj });
+            });
+          });
+        });
+
+        socket.on('structure_update', function(data) {
+          console.log('got the update request');
+          SERVER.db.updateStructure(socket.request.user.id, data.structure, function() {
+            SERVER.map.GetChunk(socket, function (chunkRect, chunkData, structures) {
+
+              var chunkObj = {
+                data: chunkData,
+                structures: structures,
                 offset: SERVER.players.data[socket.id].view.pos,
                 clear: true
               };
@@ -513,12 +584,13 @@ SERVER.socket = function(data) {
         socket.on('input', function (data) {
           //player position gets updated in the if statement, retuns true/false if needs to update chunk
           if ( SERVER.players.updatePlayer(socket.id, data) ) {
-            SERVER.map.GetChunk(socket, function (chunkRect, chunkData) {
+            SERVER.map.GetChunk(socket, function (chunkRect, chunkData, structures) {
 
               SERVER.players.data[socket.id].lastChunk = chunkRect;
 
               var chunkObj = {
                 data: chunkData,
+                structures: structures,
                 offset: SERVER.players.data[socket.id].view.pos,
                 clear: true
               };
@@ -766,13 +838,15 @@ SERVER.map.GetChunk = function(socket, callback) {
 
   var chunkRect = SERVER.map.ChunkRectFromCenterTileCoords(coords);
 
-  var chunkData = SERVER.db.FetchMapChunk(chunkRect, function(chunkData) {
+  SERVER.db.FetchStructures(chunkRect, function(structures) {
+    SERVER.db.FetchMapChunk(chunkRect, function(chunkData) {
 
-    SERVER.players.data[socket.id].lastChunk = chunkRect;
-    SERVER.players.data[socket.id].chunkData = chunkData;
+      SERVER.players.data[socket.id].lastChunk = chunkRect;
+      SERVER.players.data[socket.id].chunkData = chunkData;
 
-    callback(chunkRect, chunkData);
+      callback(chunkRect, chunkData, structures);
 
+    });
   });
 
 };

@@ -64,3 +64,13 @@ EO.structures.createfunc = function(i) {
     EO.structures.library[predefined.id] = material;
   }
 }
+EO.structures.createFaceMaterial = function(sourceTextureId, u, v) {
+  var material = EO.structures.library[sourceTextureId].clone();
+  var texture = EO.structures.library[sourceTextureId].map.clone();
+  texture.needsUpdate = true;
+  texture.repeat.set(u, v);
+  material.map = texture;
+  material.transparent = true;
+  material.opacity = 1;
+  return material;
+}

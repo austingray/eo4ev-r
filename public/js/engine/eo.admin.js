@@ -329,10 +329,11 @@ EO.admin.mapEditor.updateSelectedTile = function() {
 EO.admin.mapEditor.panel = {};
 EO.admin.mapEditor.panel.activeTile = null;
 EO.admin.mapEditor.panel.init = function() {
-  $(document).on('click', '#map-editor-panel .single-tile', function() {
-    $('#map-editor-panel .single-tile').removeClass('active');
+  $(document).on('click', '.editor-panel .single-tile', function() {
+    $('.editor-panel .single-tile').removeClass('active');
     $(this).addClass('active');
     $('#gamecanvas').focus();
+    EO.admin.structEditor.updatePreviewObject();
   });
 }
 EO.admin.mapEditor.panel.create = function() {
@@ -389,8 +390,7 @@ EO.admin.structEditor.panel.init = function() {
   $(document).on('keyup', '#struct_height', function() {
     var height = Number($(this).val());
     EO.admin.structEditor.object.scale.z = height;
-    console.log(EO.admin.structEditor.object);
-    EO.admin.structEditor.object.material.map.repeat.set(1, height);
+    EO.admin.structEditor.object.material.materials[1].map.repeat.set(1, height * 2);
   });
 }
 EO.admin.structEditor.panel.create = function() {
@@ -452,14 +452,52 @@ EO.admin.structEditor.activate = function() {
   var base = 64;
   var geometry = new THREE.BoxGeometry( base, base, base * height);
   var material = EO.structures.library[active_texture_id].clone();
-  console.log(material);
-  material.map.repeat.set( 1, height );
-  material.transparent = true;
-  material.opacity = 1;
-  EO.admin.structEditor.object = new THREE.Mesh( geometry, material );
+  for ( var i = 0; i < geometry.faces.length; i += 2 ) {
+    var hex = Math.random() * 0xffffff;
+    geometry.faces[ i ].materialIndex = 0;
+    geometry.faces[ i + 1 ].materialIndex = 0;
+	}
+  //front face has repeating texture, give it a different one -> 6
+  var frontMaterial = EO.admin.structEditor.createFaceMaterial( active_texture_id, 1, 2 );
+  geometry.faces[ 6 ].materialIndex = 1;
+  geometry.faces[ 6 + 1 ].materialIndex = 1;
+  //
+  EO.admin.structEditor.object = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial([material, frontMaterial]) );
   EO.admin.structEditor.object.castShadow = true;
   EO.admin.structEditor.object.receiveShadow = true;
   EO.three.scene.add(EO.admin.structEditor.object);
+}
+EO.admin.structEditor.updatePreviewObject = function() {
+  if ( ! EO.admin.structEditor.active ) return false;
+
+  var height = Number($('#struct_height').val());
+  var base = 64;
+  var geometry = new THREE.BoxGeometry( base, base, base * height);
+  EO.three.scene.remove(EO.admin.structEditor.object);
+  var active_texture_id = $('.single-tile.active').attr("data-id");
+  var material = EO.structures.library[active_texture_id].clone();
+  for ( var i = 0; i < geometry.faces.length; i += 2 ) {
+    var hex = Math.random() * 0xffffff;
+    geometry.faces[ i ].materialIndex = 0;
+    geometry.faces[ i + 1 ].materialIndex = 0;
+	}
+  var frontMaterial = EO.admin.structEditor.createFaceMaterial( active_texture_id, 1, 2 );
+  geometry.faces[ 6 ].materialIndex = 1;
+  geometry.faces[ 6 + 1 ].materialIndex = 1;
+  EO.admin.structEditor.object = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial([material, frontMaterial]) );
+  EO.admin.structEditor.object.castShadow = true;
+  EO.admin.structEditor.object.receiveShadow = true;
+  EO.three.scene.add(EO.admin.structEditor.object);
+}
+EO.admin.structEditor.createFaceMaterial = function(sourceTextureId, u, v) {
+  var material = EO.structures.library[sourceTextureId].clone();
+  var texture = EO.structures.library[sourceTextureId].map.clone();
+  texture.needsUpdate = true;
+  texture.repeat.set(u, v);
+  material.map = texture;
+  material.transparent = true;
+  material.opacity = 1;
+  return material;
 }
 EO.admin.structEditor.deactivate = function() {
   EO.admin.structEditor.active = false;
@@ -481,10 +519,14 @@ EO.admin.structEditor.mouse.onMouseMove = function( event ) {
 
   if ( intersects.length > 0 ) {
 
-    var x = Math.floor(intersects[0].point.x / 64) * 64
-    var y = Math.floor(intersects[0].point.y / 64) * 64;
-
-    EO.admin.structEditor.object.position.set( x, y, 1 );
+    for (var i = 0; i < intersects.length; i++) {
+      if (intersects[i].object.name === "Chunk") {
+        var x = Math.floor(intersects[i].point.x / 64) * 64;
+        var y = Math.floor(intersects[i].point.y / 64) * 64;
+        EO.admin.structEditor.object.position.set( x, y, 1 );
+        break;
+      }
+    }
 
   }
 
@@ -503,14 +545,16 @@ EO.admin.structEditor.updateSelectedTile = function() {
       var y = intersects[0].point.y;
       var height = $('#struct_height').val();
       var texture_id = $('.single-tile.active').attr("data-id");
-      var tile = {
+      var delete_structure = document.getElementById('struct_delete').checked
+      var structure = {
         x: x,
         y: y,
         height: height,
-        texture_id: texture_id
+        texture_id: texture_id,
+        delete_structure: delete_structure
       }
 
-      EO.server.socket.emit('stucture_update', { tile: tile });
+      EO.server.socket.emit('structure_update', { structure: structure });
 
     }
 

@@ -12,6 +12,7 @@ EO.input.keyboard.left = false;
 EO.input.keyboard.right = false;
 EO.input.keyboard.up = false;
 EO.input.keyboard.down = false;
+//EO.input.keyboard.lookup = ['w', 'up', 's', 'down', 'a', 'left', 'd', 'right', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 EO.input.keyboard.init = function() {
   //keyboard
   EO.input.keyboard.controller = new THREEx.KeyboardState(EO.three.renderer.domElement);
@@ -19,6 +20,9 @@ EO.input.keyboard.init = function() {
   EO.three.renderer.domElement.focus();
   // only on keydown
   EO.input.keyboard.controller.domElement.addEventListener('keydown', function(event){
+
+    //console.log(event);
+
     //up
     if ( EO.input.keyboard.controller.eventMatches(event, 'w') || EO.input.keyboard.controller.eventMatches(event, 'up') ) EO.input.keyboard.up = true;
     //down
@@ -27,6 +31,20 @@ EO.input.keyboard.init = function() {
     if ( EO.input.keyboard.controller.eventMatches(event, 'a') || EO.input.keyboard.controller.eventMatches(event, 'left') ) EO.input.keyboard.left = true;
     //right
     if ( EO.input.keyboard.controller.eventMatches(event, 'd') || EO.input.keyboard.controller.eventMatches(event, 'right') ) EO.input.keyboard.right = true;
+
+    //camera controls
+    if (
+      EO.input.keyboard.controller.eventMatches(event, '1' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '2' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '3' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '4' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '5' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '6' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '7' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '8' ) ||
+      EO.input.keyboard.controller.eventMatches(event, '9' )
+    ) EO.three.changeCamera( event.key );
+
   });
   EO.input.keyboard.controller.domElement.addEventListener('keyup', function(event) {
     //up

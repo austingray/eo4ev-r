@@ -44,6 +44,7 @@ EO.map.HandleChunk_deletethisfunction = function(chunk) {
   EO.three.scene.add(mesh);
 
 }
+
 EO.map.chunkHooks = [];
 EO.map.HandleChunk = function(chunkObj) {
 
@@ -54,6 +55,7 @@ EO.map.HandleChunk = function(chunkObj) {
   }
 
   var chunk = chunkObj.data;
+  var structures = chunkObj.structures;
   var offset = chunkObj.offset;
 
   var chunkGeometry = new THREE.Geometry();
@@ -105,6 +107,31 @@ EO.map.HandleChunk = function(chunkObj) {
   chunkMesh.receiveShadow = true;
   chunkMesh.name = "Chunk"
   //chunk.position.set(offset.x, offset.y, 0);
+
+  console.log("da structures:");
+  console.log(structures);
+  for (var s = 0; s < structures.length; s++) {
+    var structure = structures[s];
+    var height = structure.height;
+    var base = 64;
+    var geometry = new THREE.BoxGeometry( base, base, base * height);
+    var texture_id = structure.texture_id;
+    var material = EO.structures.library[texture_id].clone();
+    for ( var t = 0; t < geometry.faces.length; t += 2 ) {
+      var hex = Math.random() * 0xffffff;
+      geometry.faces[ t ].materialIndex = 0;
+      geometry.faces[ t + 1 ].materialIndex = 0;
+  	}
+    var frontMaterial = EO.structures.createFaceMaterial( texture_id, 1, height * 2 );
+    geometry.faces[ 6 ].materialIndex = 1;
+    geometry.faces[ 6 + 1 ].materialIndex = 1;
+    var mesh = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial([material, frontMaterial]) );
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    console.log(mesh);
+    mesh.position.set(structure.x * 64, structure.y * 64, 0);
+    EO.three.scene.add(mesh);
+  }
 
   EO.three.scene.add(chunkMesh);
 
