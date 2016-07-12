@@ -479,8 +479,6 @@ SERVER.socket = function(data) {
       //send join notice plus first chunk
       SERVER.map.GetChunk(socket, function (chunkRect, chunkData, structures) {
 
-        console.log("server structures");
-        console.log(structures);
         var chunkObj = {
           data: chunkData,
           structures: structures,

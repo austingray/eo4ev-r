@@ -24,6 +24,7 @@ EO.three.init = function() {
   EO.three.renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
   EO.three.renderer.setSize( EO.settings.width, EO.settings.height );
   EO.three.renderer.shadowMap.enabled = true;
+  EO.three.renderer.shadowMap.cullFrontFaces = false;
 
   //ambient light
   var ambientLight = new THREE.AmbientLight( 0xcccccc );
@@ -87,20 +88,21 @@ EO.three.updateCamera = function( position ) {
 
   EO.three.renderCurrentCamera( position );
   //EO.three.dirLight.position.set( position.x + 125, position.y +  -87.5, position.z + 200 );
-  EO.three.dirLight.shadow.camera.left = position.x - 500;
-  EO.three.dirLight.shadow.camera.right = position.x + 500;
-  EO.three.dirLight.shadow.camera.top = position.y + 500;
-  EO.three.dirLight.shadow.camera.bottom = position.y - 500;
+  EO.three.dirLight.shadow.camera.left = position.x - 1000;
+  EO.three.dirLight.shadow.camera.right = position.x + 1000;
+  EO.three.dirLight.shadow.camera.top = position.y + 1000;
+  EO.three.dirLight.shadow.camera.bottom = position.y - 1000;
   EO.three.dirLight.shadow.camera.updateProjectionMatrix();
   EO.three.camera.updateProjectionMatrix();
 
 
 }
-EO.three.cameraDictionary = [ 1, 2, 3 ];
+EO.three.cameraDictionary = [ 1, 2, 3, 4 ];
 EO.three.renderCurrentCamera = function ( position ) {
+
   if (EO.three.cameraKey === 1) {
     EO.three.camera.position.set( position.x, position.y - 2, 1 );
-    EO.three.camera.rotation.set( 0, 0, 0 );
+    EO.three.camera.lookAt( position );
     EO.three.camera.updateProjectionMatrix();
   }
   if (EO.three.cameraKey === 2) {
@@ -110,7 +112,12 @@ EO.three.renderCurrentCamera = function ( position ) {
   }
   if (EO.three.cameraKey === 3) {
     EO.three.camera.position.set( position.x, position.y - 2, 1 );
-    EO.three.camera.lookAt( position );
+    EO.three.camera.rotation.set( 0, 0, 0 );
+    EO.three.camera.updateProjectionMatrix();
+  }
+  if (EO.three.cameraKey === 4) {
+    EO.three.camera.position.set( position.x, position.y - 2, 1 );
+    EO.three.camera.rotation.set( Math.PI / 2 - 0.1, 0, 0 );
     EO.three.camera.updateProjectionMatrix();
   }
 }

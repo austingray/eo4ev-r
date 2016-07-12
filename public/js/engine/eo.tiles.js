@@ -28,7 +28,7 @@ EO.tiles.createfunc = function(i) {
     var asset_url = predefined.asset.file_url.split('public/')[1];
     var tLoader = new THREE.TextureLoader();
     var t = tLoader.load( asset_url );
-    var material = new THREE.MeshPhongMaterial({ map: t });
+    var material = new THREE.MeshPhongMaterial({ map: t, shading: THREE.SmoothShading });
     EO.tiles.library[predefined.id] = material;
   }
 }
@@ -59,7 +59,7 @@ EO.structures.createfunc = function(i) {
     var tLoader = new THREE.TextureLoader();
     var t = tLoader.load( asset_url );
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    var material = new THREE.MeshPhongMaterial({ map: t, shininess: 0, shading: THREE.FlatShading });
+    var material = new THREE.MeshPhongMaterial({ map: t, shininess: 0, shading: THREE.SmoothShading });
     material.receiveShadow = true;
     EO.structures.library[predefined.id] = material;
   }
