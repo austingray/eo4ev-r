@@ -476,6 +476,9 @@ EO.admin.structEditor.updatePreviewObject = function() {
   EO.three.scene.remove(EO.admin.structEditor.object);
   var active_texture_id = $('.single-tile.active').attr("data-id");
   var material = EO.structures.library[active_texture_id].clone();
+  material.map.needsUpdate = true;
+  material.transparent = true;
+  material.opacity = .5;
   for ( var i = 0; i < geometry.faces.length; i += 2 ) {
     var hex = Math.random() * 0xffffff;
     geometry.faces[ i ].materialIndex = 0;
@@ -485,6 +488,8 @@ EO.admin.structEditor.updatePreviewObject = function() {
   geometry.faces[ 6 ].materialIndex = 1;
   geometry.faces[ 6 + 1 ].materialIndex = 1;
   EO.admin.structEditor.object = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial([material, frontMaterial]) );
+  EO.admin.structEditor.object.material.transparent = true;
+  EO.admin.structEditor.object.material.opacity = .5;
   EO.admin.structEditor.object.castShadow = true;
   EO.admin.structEditor.object.receiveShadow = true;
   EO.three.scene.add(EO.admin.structEditor.object);
@@ -496,7 +501,7 @@ EO.admin.structEditor.createFaceMaterial = function(sourceTextureId, u, v) {
   texture.repeat.set(u, v);
   material.map = texture;
   material.transparent = true;
-  material.opacity = 1;
+  material.opacity = .5;
   return material;
 }
 EO.admin.structEditor.deactivate = function() {

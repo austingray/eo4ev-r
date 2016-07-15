@@ -121,8 +121,11 @@ exports.seed = function(knex, Promise) {
     // knex('asset_categories').insert({
     //   name: 'Characters'
     // }),
+    // knex('asset_categories').insert({
+    //   name: 'Structures'
+    // }),
     knex('asset_categories').insert({
-      name: 'Structures'
+      name: 'Items'
     })
 
     //asset types

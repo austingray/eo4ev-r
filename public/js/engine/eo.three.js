@@ -17,6 +17,7 @@ EO.three.init = function() {
   var near = -1000;
   var far = 1000;
   EO.three.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
+  //EO.three.camera = new THREE.PerspectiveCamera( 70, 800 / 600, 1, 1000 );
   EO.three.cameraKey = 1;
 
   //renderer
@@ -101,7 +102,7 @@ EO.three.cameraDictionary = [ 1, 2, 3, 4 ];
 EO.three.renderCurrentCamera = function ( position ) {
 
   if (EO.three.cameraKey === 1) {
-    EO.three.camera.position.set( position.x, position.y - 2, 1 );
+    EO.three.camera.position.set( position.x, position.y - 200, 200 );
     EO.three.camera.lookAt( position );
     EO.three.camera.updateProjectionMatrix();
   }

@@ -141,24 +141,62 @@ SERVER.db.updateStructure = function(user_id, structure, callback) {
 
     if (user_access > 2) {
 
-      var tile_x = Math.floor( Number(structure.x) / 64 );
-      var tile_y = Math.floor( Number(structure.y) / 64 );
+      console.log(structure);
+      // var tile_x = Math.floor( Number(structure.x) / 64 );
+      // var tile_y = Math.floor( Number(structure.y) / 64 );
+      var tile_x = SERVER.util.floorX(structure.x);
+      var tile_y = SERVER.util.floorY(structure.y);
       var height = Number( structure.height );
-      var texture_id = Number( structure.texture_id )
+      var texture_id = Number( structure.texture_id );
+      var deleteStruct = structure.delete_structure;
       Structures.query(function(qb) {
         qb.where('x', '=', tile_x).andWhere('y', '=', tile_y)
       }).fetch().then(function(model) {
         if (model == null) {
           new Structures({ x: tile_x, y: tile_y, height: Number(structure.height), texture_id: texture_id }).save().then(function(model) {
-            callback();
+            Maps.query(function(qb) {
+              qb.where('x', '=', tile_x)
+                .andWhere('y', '=', tile_y)
+            }).fetch().then(function(model) {
+              if (model == null) {
+                new Maps({ x: tile_x, y: tile_y, height: 0, blocking: true, tile_id: 1 }).save().then(function(map_tile) {
+                  callback();
+                });
+              } else {
+                var map = model.toJSON();
+                var map_id = map.id;
+                new Maps({ id: map_id }).save({
+                  blocking:true
+                }, {patch: true}).then(function(model) {
+                  callback();
+                });
+              }
+            });
           });
         } else {
 
           var structObj = model.toJSON();
 
-          if (structure.delete) {
+          if (deleteStruct) {
             new Structures({ id: structObj.id }).destroy().then(function(model) {
-              callback();
+              Maps.query(function(qb) {
+                qb.where('x', '=', tile_x)
+                  .andWhere('y', '=', tile_y)
+              }).fetch().then(function(model) {
+                if (model == null) {
+                  new Maps({ x: tile_x, y: tile_y, height: 0, blocking: false, tile_id: 1 }).save().then(function(map_tile) {
+                    callback();
+                  });
+                } else {
+                  var map = model.toJSON();
+                  var map_id = map.id;
+                  new Maps({ id: map_id }).save({
+                    blocking:false
+                  }, {patch: true}).then(function(model) {
+                    callback();
+                  });
+                }
+              });
             });
           } else {
             new Structures({ id: structObj.id }).save({
@@ -778,6 +816,21 @@ SERVER.chatCommands.dictionary = {
       rKey: 'message',
       rVal: 'Starting dat structure editor'
     }
+  },
+
+  stresstest: {
+    access: 10,
+    action: function(socket, args, callback) {
+      var position = SERVER.players.data[socket.id].view.pos;
+      SERVER.stressTest(position, function() {
+        callback();
+      });
+    },
+    response: {
+      rType: 'notice',
+      rKey: 'message',
+      rVal: 'running stress test'
+    }
   }
 
 }
@@ -853,4 +906,70 @@ SERVER.map.GetChunk = function(socket, callback) {
 //connect to the app
 module.exports = function(io) {
   SERVER.socket(io);
+}
+
+
+//test
+var stresstest = 100;
+SERVER.stressTest = function(position, callback) {
+
+  new Characters().fetchAll().then(function(model) {
+
+    var characters = model.toJSON();
+
+    for (var i = 0; i < characters.length; i++) {
+
+      var user_data = characters[i];
+
+      if (user_data.current_model == null) {
+        var current_model_name = 1;
+      } else {
+        var current_model_name = user_data.current_model;
+      }
+
+      var user = {};
+      user.name = stresstest+i;
+      user.current_model = current_model_name;
+      user.hsl = {};
+      user.hsl.h = user_data.hue;
+      user.hsl.s = user_data.saturation;
+      user.hsl.l = user_data.lightness;
+      user.view = {};
+      user.view.pos = {
+        x: position.x - (Math.random() * 400) + (Math.random() * 400),
+        y: position.y - (Math.random() * 400) + (Math.random() * 400),
+        z: 0
+      }
+      user.view.rot = 0;
+      user.view.walking = true;
+      user.speed = 1;
+
+      SERVER.players.index.push(stresstest+i);
+      SERVER.players.data[stresstest+i] = user;
+
+    }
+    stresstest = stresstest + 100;
+    console.log(stresstest);
+    callback();
+  });
+}
+
+function goclone(source) {
+  if (Object.prototype.toString.call(source) === '[object Array]') {
+    var clone = [];
+    for (var i=0; i<source.length; i++) {
+      clone[i] = goclone(source[i]);
+    }
+    return clone;
+  } else if (typeof(source)=="object") {
+    var clone = {};
+    for (var prop in source) {
+      if (source.hasOwnProperty(prop)) {
+        clone[prop] = goclone(source[prop]);
+      }
+    }
+    return clone;
+  } else {
+    return source;
+  }
 }

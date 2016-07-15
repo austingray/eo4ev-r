@@ -67,7 +67,7 @@ EO.map.HandleChunk = function(chunkObj) {
   //individual geo reference
   var geometry = new THREE.PlaneGeometry( 64, 64 );
   //blank tile material
-  var material = new THREE.MeshPhongMaterial( { color: 0x001111, vertexColors: true, shading: THREE.SmoothShading } );
+  var material = new THREE.MeshPhongMaterial( { color: 0x001111, vertexColors: true } );
   //individual tile mesh
   var mesh = new THREE.Mesh( geometry, material );
   //loop through tiles
