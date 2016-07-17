@@ -105,7 +105,7 @@ router.get('/assets/models/all', function(req, res, next) {
 router.get('/assets/tiles/all', function(req, res, next) {
   new Tiles().fetchAll({ withRelated: ['asset'] }).then(function(model) {
     res.json(model.toJSON());
-  })
+  });
   // Tiles.query(function(qb) {
   //   qb.where('asset_type_id', '=', 2)
   //     .andWhere('asset_category_id', '=', 3)
@@ -121,7 +121,7 @@ router.get('/assets/structures/all', function(req, res, next) {
   }).fetchAll().then(function(assets) {
     res.json(assets.toJSON());
   });
-})
+});
 
 //////////////////////////////////////////////////////////////////////////////////////
 //helper function to convert username to lowercase and check if it is already taken //

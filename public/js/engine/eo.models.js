@@ -24,7 +24,7 @@ EO.models.createfunc = function(i) {
 
         var texture = model.material.map;
         EO.globalTexture = model.material.map;
-        texture.needsUpdate = true; // important
+        //texture.needsUpdate = true; // important
 
         // uniforms
         var uniforms = {
@@ -113,6 +113,7 @@ EO.models.addToWorld = function(model_id, name) {
   model.mesh.name = name;
   model.animations = {};
   model.animations.walk = EO.three.mixer.clipAction( model.mesh.geometry.animations[0], model.mesh );
+  model.animations.walk.timeScale = 1.4;
   EO.world.createObject(model);
 
 }

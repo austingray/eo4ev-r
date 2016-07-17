@@ -29,6 +29,7 @@ EO.tiles.createfunc = function(i) {
     var tLoader = new THREE.TextureLoader();
     var t = tLoader.load( asset_url );
     var material = new THREE.MeshPhongMaterial({ map: t, shading: THREE.SmoothShading });
+    material.asset_id = predefined.asset_id;
     EO.tiles.library[predefined.id] = material;
   }
 }

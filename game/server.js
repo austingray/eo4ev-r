@@ -57,7 +57,7 @@ SERVER.db.fetchUser = function(socket, callback) {
     user.view.pos = user_data.position;
     user.view.rot = 0;
     user.view.walking = false;
-    user.speed = 1;
+    user.speed = 2;
 
     callback(user);
 
@@ -141,7 +141,6 @@ SERVER.db.updateStructure = function(user_id, structure, callback) {
 
     if (user_access > 2) {
 
-      console.log(structure);
       // var tile_x = Math.floor( Number(structure.x) / 64 );
       // var tile_y = Math.floor( Number(structure.y) / 64 );
       var tile_x = SERVER.util.floorX(structure.x);
@@ -563,7 +562,6 @@ SERVER.socket = function(data) {
         });
 
         socket.on('structure_update', function(data) {
-          console.log('got the update request');
           SERVER.db.updateStructure(socket.request.user.id, data.structure, function() {
             SERVER.map.GetChunk(socket, function (chunkRect, chunkData, structures) {
 

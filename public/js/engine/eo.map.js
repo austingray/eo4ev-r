@@ -76,14 +76,16 @@ EO.map.HandleChunk = function(chunkObj) {
     if (typeof EO.tiles.library[chunk[i].tile_id] === 'undefined') {
       // tile does not exist in database, use blank tile material
       mesh.material = material;
+      mesh.material.asset_id = 0;
     } else {
       // tile exists in database, clone the source from tile library
       mesh.material = EO.tiles.library[chunk[i].tile_id].clone(true);
+      mesh.material.asset_id = EO.tiles.library[chunk[i].tile_id].asset_id;
     }
     //add material to dictionary if does not exist
-    var mat_array_index = materialListIndex.indexOf(chunk[i].tile_id);
+    var mat_array_index = materialListIndex.indexOf(mesh.material.asset_id);
     if (mat_array_index < 0) {
-      materialListIndex.push(chunk[i].tile_id);
+      materialListIndex.push(mesh.material.asset_id);
       materialListDictionary.push(mesh.material);
       mat_array_index = materialListIndex.length - 1;
     }
