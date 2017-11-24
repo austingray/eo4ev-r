@@ -43,7 +43,6 @@ EO.structures.preloads = [];
 EO.structures.init = function() {
   EO.util.ajax('/assets/structures/all', 'GET', function(response) {
     EO.structures.predefined = JSON.parse(response.responseText);
-    console.log(EO.structures.predefined);
     //loop through all our predefined tiles
     for (var i = 0; i < EO.structures.predefined.length; i++) {
       EO.structures.preloads[i] = EO.structures.createfunc(i);

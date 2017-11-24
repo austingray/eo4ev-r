@@ -1,9 +1,9 @@
 /**
-	*	
+	*
 	* 	EO.init()  *** called when socket server establishes connection
 	* 	EO.render()  *** called like, 60 times a second, the main loop
 	* 	EO.update()  *** main update function, reads server data and traverses the scene, updating
-	*  	
+	*
 	* 	EO.settings  *** stores global settings
 	* 		.update()  *** updates settings that need updating, like current frame
 	*
@@ -32,8 +32,8 @@
 	*
 	* 	EO.server  *** socket handler - current using socket.io
 	* 		.on(event) -
-	* 			news - 
-	* 			chat - 
+	* 			news -
+	* 			chat -
 	* 			join -
 	* 			update -
 	* 			disconnect -
@@ -149,10 +149,10 @@ EO.settings.update = function() {
 EO.three = {};
 
 EO.three.init = function() {
-	
+
 	//scene
 	EO.three.scene = new THREE.Scene();
-	
+
 	//camera
 	var camera_left = EO.settings.width / - 2;
 	var camera_right = EO.settings.width / 2;
@@ -163,13 +163,13 @@ EO.three.init = function() {
 	EO.three.camera = new THREE.OrthographicCamera( camera_left, camera_right, camera_top, camera_bottom, near, far );
 	EO.three.camera.lookAt(new THREE.Vector3(0, 0, 0));
 	EO.three.camera.updateProjectionMatrix();
-	
+
 	//renderer
 	var canvas = document.getElementById("gamecanvas");
 	EO.three.renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
 	EO.three.renderer.setSize( EO.settings.width, EO.settings.height );
 	EO.three.renderer.shadowMap.enabled = true;
-	
+
 	//ambient light
 	var ambientLight = new THREE.AmbientLight( 0xcccccc );
 	ambientLight.intensity = .5;
@@ -191,9 +191,9 @@ EO.three.init = function() {
 	EO.three.dirLight.shadow.bias = -0.0001;
 	EO.three.dirLight.shadow.camera.visible = true;
 	EO.three.scene.add( EO.three.dirLight );
-	
+
 	EO.three.renderer.setClearColor( 0xbfd1e5 );
-	EO.three.renderer.setPixelRatio( window.devicePixelRatio );	
+	EO.three.renderer.setPixelRatio( window.devicePixelRatio );
 
 	//animation mixer
 	EO.three.mixer = new THREE.AnimationMixer( EO.three.scene );
@@ -273,7 +273,7 @@ EO.input.mouse.onMouseMove = function( event ) {
 	// (-1 to +1) for both components
 
 	EO.input.mouse.vector.x = ( ( event.clientX - document.getElementById('gamecanvas').getBoundingClientRect().left ) / EO.settings.width ) * 2 - 1;
-	EO.input.mouse.vector.y = - ( ( event.clientY - document.getElementById('gamecanvas').getBoundingClientRect().top ) / EO.settings.height ) * 2 + 1;		
+	EO.input.mouse.vector.y = - ( ( event.clientY - document.getElementById('gamecanvas').getBoundingClientRect().top ) / EO.settings.height ) * 2 + 1;
 
 }
 EO.mapping = true;
@@ -284,12 +284,12 @@ EO.input.mouse.update = function() {
 	if (EO.mapping === true) {
 
 		// update the picking ray with the camera and mouse position
-		this.raycaster.setFromCamera( EO.input.mouse.vector, EO.three.camera );	
+		this.raycaster.setFromCamera( EO.input.mouse.vector, EO.three.camera );
 		// calculate objects intersecting the picking ray
 		var intersects = this.raycaster.intersectObjects( EO.three.scene.children );
 
 		if ( intersects.length > 0 ) {
-			
+
 			if (intersects[0].object !== this.currentIntersected) {
 
 				var geometry = null;
@@ -363,7 +363,7 @@ EO.input.mouse.update = function() {
 
 
 		 //    geom.colorsNeedUpdate = true
-		 
+
 		}
 
 	}
@@ -445,11 +445,11 @@ EO.models.init = function() {
 			var model = object.children[0];
 
 			if (predefined.id === 'hero') {
-				
+
 				var texture = model.material.map;
 				EO.globalTexture = model.material.map;
 	      texture.needsUpdate = true; // important
-	      
+
 	      // uniforms
 	      var uniforms = {
 	        color: { type: "c", value: new THREE.Color( 0xff0000 ) }, // material is "red"
@@ -509,7 +509,7 @@ EO.models.addToWorld = function(model_id, name) {
 	      //model.material = material;
 	      skinMesh.material.skinning = true;
 	      //model.material._needsUpdate = true;
-			
+
 				skinMesh.scale.x = EO.models.library[model_id].scale.x;
 				skinMesh.scale.y = EO.models.library[model_id].scale.y;
 				skinMesh.scale.z = EO.models.library[model_id].scale.z;
@@ -541,9 +541,9 @@ EO.tiles.type.grass = [];
 EO.tiles.type.water = [];
 EO.tiles.materials = [];
 EO.tiles.init = function() {
-	
+
 	for (var i = 0; i < EO.tiles.textures.length; i++) {
-		
+
 		var texture = EO.tiles.textures[i];
 		if (typeof texture.file === 'undefined') {
 
@@ -577,7 +577,7 @@ EO.map.init = function() {
 
 }
 EO.map.chunk = function() {
-	
+
 }
 EO.map.draw = function() {
 
@@ -586,7 +586,7 @@ EO.map.update = function() {
 
 }
 EO.map.HandleChunk = function(chunk) {
-	
+
 	var chunkGeometry = new THREE.Geometry();
 
 	for (var i = 0; i < chunk.length; i++) {
@@ -609,7 +609,6 @@ EO.map.HandleChunk = function(chunk) {
 	var chunk = new THREE.Mesh(chunkGeometry, new THREE.MeshFaceMaterial( [ EO.tiles.materials[0], EO.tiles.materials[1] ] ) );
 	chunk.receiveShadow = true;
 	chunk.material.vertexColors = THREE.FaceColors;
-	console.log(chunk);
 	chunk.geometry.computeFaceNormals();
 	chunk.geometry.computeVertexNormals();
 	chunk.name = "Chunk"

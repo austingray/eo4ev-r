@@ -1,4 +1,17 @@
-# Eo Forever
+# Eo4ev-r (Pronouned Ee-oh Forever)
+
+This project has been abandoned and is being rewritten [here](https://github.com/austingray/EoForever). This effort got pretty far, including:
+
+- An admin area for managing the game, including a web based asset manager for uploading models and textures. These would auto populate the map editor
+![Asset Manager](/screenshots/asset-manager.png?raw=true "Asset Manager")
+- A character creation process
+![Character Creation](/screenshots/character-creation.png?raw=true "Character Creation")
+- In in game chat system and command system, for example: `/speed 5` would multiply your walking speed by 5, `/map` would bring up the map editor, and `/structure` would bring up the 3d structure editor. For admins only of course.
+![Map Editor](/screenshots/map-editor.png?raw=true "Asset Manager")
+
+I only did one live play test with 3 people online including myself with varying results. I deployed it with AWS Elastic Beanstalk which was probably a bad idea. But in any event it worked and it was fun, even if there was no inventory or combat. In my mind it was a success!
+
+The bottom line is it is a horrible inefficient monster that needs a lot of refactoring. Instead of tacking onto this current project I am taking what I learned and rebuilding it from the bottom up. If you want to try to get this current version running locally and need help, send me a message on [twitter](https://twitter.com/austingray).
 
 ### main files
 * app.js - app
@@ -7,13 +20,13 @@
 
 ### the stack
 * Three.js - graphics
-* Node.js - http server
-* Express.js - app framework
-* Passport.js - authentication
 * Pug.js - views
+* Express.js - app framework
 * Socket.io - websockets
-* Knex.js - database intermediary
+* Passport.js - authentication
+* Node.js - http server
 * Bookshelf.js - ORM
+* Knex.js - database intermediary
 * PostgreSQL - database
 
 ### installation instructions
