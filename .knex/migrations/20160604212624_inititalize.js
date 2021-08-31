@@ -1,6 +1,29 @@
-exports.up = function(knex, Promise) {
+
+exports.up = function(knex) {
 
   return Promise.all([
+
+    knex.schema.createTable("sexes", function (table) {
+      table.increments().primary();
+      table.string("name");
+    }),
+
+    knex.schema.createTable("races", function (table) {
+      table.increments().primary();
+      table.string("name");
+      table.text("description");
+      table.decimal("hue");
+      table.decimal("sat_min");
+      table.decimal("sat_max");
+      table.decimal("light_min");
+      table.decimal("light_max");
+    }),
+
+    knex.schema.createTable("classes", function (table) {
+      table.increments().primary();
+      table.string("name");
+      table.text("description");
+    }),
 
      knex.schema.createTable("users", function (table) {
       table.increments().primary();
@@ -44,27 +67,7 @@ exports.up = function(knex, Promise) {
       table.integer("intelligence").notNullable().defaultTo(10);
     }),
 
-    knex.schema.createTable("sexes", function (table) {
-      table.increments().primary();
-      table.string("name");
-    }),
-
-    knex.schema.createTable("races", function (table) {
-      table.increments().primary();
-      table.string("name");
-      table.text("description");
-      table.decimal("hue");
-      table.decimal("sat_min");
-      table.decimal("sat_max");
-      table.decimal("light_min");
-      table.decimal("light_max");
-    }),
-
-    knex.schema.createTable("classes", function (table) {
-      table.increments().primary();
-      table.string("name");
-      table.text("description");
-    }),
+    
 
     knex.schema.createTable("posts", function (table) {
       table.increments().primary();
@@ -77,6 +80,6 @@ exports.up = function(knex, Promise) {
   ])
 };
 
-exports.down = function(knex, Promise) {
+exports.down = function(knex) {
   
 };

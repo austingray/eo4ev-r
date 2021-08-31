@@ -1,15 +1,15 @@
 var bookshelf = require('./bookshelf.js');
 var Characters = require('./characters.js');
 
-var Users = bookshelf.Model.extend({
+const Users = bookshelf.Model.extend({
 
   tableName: 'users',
 
-  characters: function() {
+  characters() {
     return this.hasMany(Characters);
   },
 
-  current_character: function () {
+  current_character() {
     return this.belongsTo(Characters, 'current_character');
   }
 

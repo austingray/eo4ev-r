@@ -20,9 +20,9 @@ CHARACTER.render = function() {
   //render frame
   CHARACTER.three.renderer.render( CHARACTER.three.scene, CHARACTER.three.camera );
   if (CHARACTER.models.library.hero)
-    CHARACTER.models.library.hero.rotation.y = CHARACTER.models.library.hero.rotation.y + .005;
+    CHARACTER.models.library.hero.rotation.y = .5;// CHARACTER.models.library.hero.rotation.y + .005;
   if (CHARACTER.map.mesh)
-    CHARACTER.map.mesh.rotation.z = CHARACTER.map.mesh.rotation.z + .005;
+    CHARACTER.map.mesh.rotation.z = .75;// CHARACTER.map.mesh.rotation.z + .005;
   //request next frame
   requestAnimationFrame( CHARACTER.render );
 }
@@ -31,7 +31,7 @@ CHARACTER.render = function() {
 // Settings //
 //////////////
 CHARACTER.settings = {};
-CHARACTER.settings.width = 500;
+CHARACTER.settings.width = 400;
 CHARACTER.settings.height = 400;
 CHARACTER.settings.clock = new THREE.Clock();
 

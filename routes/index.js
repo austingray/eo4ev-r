@@ -29,8 +29,15 @@ router.get('/', function(req, res, next) {
 // account registrations action //
 //////////////////////////////////
 router.post('/register', function(req, res, next) {
+  console.log('here')
+  bcrypt.genSalt(10, function(err, salt) {
+    bcrypt.hash(req.body.password, salt, function(err, hash) {
+      console.log(hash)
+    })
+  })
 
   if (req.body.register === 'on') {
+    console.log('on')
 
     var _username = req.body.username;
     var allowedRegex = /^[a-zA-Z0-9_]{1,15}$/;
@@ -48,6 +55,7 @@ router.post('/register', function(req, res, next) {
     }
 
     convert_to_lower_then_check(_username, function(taken) {
+      console.log('convert')
 
       if (taken) {
         req.flash('error', 'Requested username is not available. Please try a new username.');
@@ -60,23 +68,25 @@ router.post('/register', function(req, res, next) {
       .fetch()
       .then( function(model) {
         if (null === model) {
-          //create new account!
-          bcrypt.genSalt(10, function(err, salt) {
-            bcrypt.hash(req.body.password, salt, function(err, hash) {
-              new Users({ username:req.body.username, hash: hash, email:req.body.email })
-              .save()
-              .then(function(model) {
-                passport.authenticate('local')(req, res, function() {
-                  res.redirect('/account');
-                });
-              });
-            });
-          });
+          
         } else {
           //username is already in use
           req.flash('error', 'Requested username is not available. Please try a new username.');
           res.redirect('/account');
         }
+      }).catch((error) => {
+        //create new account!
+        bcrypt.genSalt(10, function(err, salt) {
+          bcrypt.hash(req.body.password, salt, function(err, hash) {
+            new Users({ username:req.body.username, hash: hash, email:req.body.email })
+            .save()
+            .then(function(model) {
+              passport.authenticate('local')(req, res, function() {
+                res.redirect('/account');
+              });
+            });
+          });
+        });
       });
     });
     //end registration
@@ -128,15 +138,18 @@ router.get('/assets/structures/all', function(req, res, next) {
 //////////////////////////////////////////////////////////////////////////////////////
 function convert_to_lower_then_check(username, callback) {
   var _username = username.toLowerCase();
-  new Users().query('whereRaw', 'LOWER(username) = ?', _username).fetch().then(function(model) {
-    if (null === model) {
-      //name doesn't exist
-      callback(false);
-    } else {
-      //name exists
-      callback(true);
-    }
-  });
+  callback(false)
+  // new Users().query('whereRaw', 'LOWER(username) = ?', _username).fetch().then(function(model) {
+  //   if (null === model) {
+  //     //name doesn't exist
+  //     callback(false);
+  //   } else {
+  //     //name exists
+  //     callback(true);
+  //   }
+  // }).catch((error) => {
+  //   callback(false);
+  // });
 }
 
 

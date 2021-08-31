@@ -17,11 +17,14 @@ router.get('/', function(req, res, next) {
   if (typeof req.user === 'undefined') {
     res.render('login', { title: 'Dat three.js doe - Login/Register', flash: req.flash('error') });
   } else {
-
-    new Users({ id: req.user.id }).fetch({ withRelated: ['characters.sex', 'characters.class', 'characters.race', 'current_character'] }).then(function(model) {
+    console.log(req.user.id);
+    new Users({ id: req.user.id }).fetch().then((model) => {//{ withRelated: ['characters.sex', 'characters.class', 'characters.race', 'current_character'] }).then(function(model) {
+      console.log(model);
       user_model = model.toJSON();
       res.render('account', { title: 'Dat three.js doe - My Account', user: user_model, characters: user_model.characters, scripts: 'character' });
-    });
+    }).catch((err) => {
+      console.log(err);
+    }) ;
 
   }
 });

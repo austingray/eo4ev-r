@@ -3,6 +3,6 @@ var dbConfig = {
   connection: process.env.PG_CONNECTION_STRING
 }
 
-var knex = require('knex')(dbConfig);
-
-module.exports = require('bookshelf')(knex);
+const knex = require('knex')(dbConfig);
+const bookshelf = require('bookshelf')(knex)
+module.exports = bookshelf;
